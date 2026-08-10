@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💝 给你</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --rose: #e8a0bf; --rose-dark: #c2768a; --blush: #f9d5d3;
+    --cream: #fff5f5; --gold: #d4a574; --text: #e8ccd4;
+    --card-bg: rgba(255,240,245,0.10); --card-border: rgba(255,180,200,0.22);
+  }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(170deg, #0d0508 0%, #1a0a10 25%, #2d1520 50%, #1a0a10 75%, #0d0508 100%);
+    font-family: 'ZCOOL XiaoWei', 'Ma Shan Zheng', serif;
+    overflow-x: hidden; cursor: default;
+    color: var(--text);
+  }
+  @media (max-width: 768px) {
+    .cursor-glow, .sparkle { display: none !important; }
+    body { cursor: default; }
+  }
+
+  /* ---- CURSOR GLOW ---- */
+  .cursor-glow {
+    position: fixed; pointer-events: none; z-index: 9999;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,180,200,0.10) 0%, rgba(255,150,180,0.03) 35%, transparent 70%);
+    transform: translate(-50%, -50%);
+  }
+
+  /* ---- SPARKLE TRAIL ---- */
+  .sparkle {
+    position: fixed; pointer-events: none; z-index: 9998;
+    animation: sparkleFade 0.8s ease-out forwards;
+  }
+  @keyframes sparkleFade {
+    0% { opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+    100% { opacity:0; transform:translate(-50%,-50%) scale(0) rotate(180deg); }
+  }
+
+  /* ---- STARS ---- */
+  .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+  .star {
+    position:absolute; background:white; border-radius:50%;
+    animation: twinkle var(--dur) ease-in-out infinite; animation-delay:var(--delay); opacity:0;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity:0.15; transform:scale(1); }
+    50% { opacity:1; transform:scale(1.8); }
+  }
+
+  /* ---- FLOATING HEARTS ---- */
+  .floating-hearts { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  .float-heart {
+    position:absolute; bottom:-60px; font-size:var(--size);
+    animation: floatUp var(--dur) linear infinite; animation-delay:var(--delay); opacity:0.3;
+  }
+  @keyframes floatUp {
+    0% { transform:translateY(0) rotate(0deg) scale(0.3); opacity:0; }
+    8% { opacity:0.4; } 85% { opacity:0.25; }
+    100% { transform:translateY(-110vh) rotate(var(--rot)) scale(1.2); opacity:0; }
+  }
+
+  /* ---- ROSE PETALS ---- */
+  .petals { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  .petal {
+    position:absolute; top:-40px; font-size:var(--size);
+    animation: petalFall var(--dur) linear infinite; animation-delay:var(--delay); opacity:0.7;
+  }
+  @keyframes petalFall {
+    0% { transform:translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    5% { opacity:0.8; } 60% { opacity:0.6; }
+    100% { transform:translateY(110vh) translateX(var(--drift)) rotate(var(--spin)); opacity:0; }
+  }
+
+  /* ---- CONTAINER ---- */
+  .container {
+    position:relative; z-index:2; max-width:760px; margin:0 auto;
+    padding: 40px 24px 80px;
+    display:flex; flex-direction:column; align-items:center; gap:44px;
+  }
+
+  /* ---- SCROLL REVEAL ---- */
+  .reveal {
+    opacity:0; transform:translateY(40px);
+    transition: opacity 0.9s ease-out, transform 0.9s cubic-bezier(0.22,0.61,0.36,1);
+  }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  /* ---- CANVAS HERO ---- */
+  .canvas-hero {
+    width:100%; max-width:420px;
+    aspect-ratio: 1/1;
+    position:relative;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .canvas-hero canvas {
+    width:100%; height:100%;
+  }
+  .canvas-hero .tap-hint {
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    color: rgba(255,200,210,0.5); font-size:0.85rem;
+    letter-spacing:2px;
+    animation: hintPulse 2s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes hintPulse {
+    0%,100% { opacity:0.3; }
+    50% { opacity:0.8; }
+  }
+
+  /* ---- HERO TITLE ---- */
+  .hero { text-align:center; padding-top:20px; }
+  .hero h1 {
+    font-family:'Ma Shan Zheng',cursive; font-size:3rem;
+    background: linear-gradient(135deg, #ffccd5 0%, #ff9eb5 40%, #ffccd5 70%, #ffe0e6 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter: drop-shadow(0 0 40px rgba(255,150,180,0.4));
+    letter-spacing:8px;
+  }
+  .hero .subtitle {
+    color: rgba(255,200,210,0.5); font-size:1rem; letter-spacing:4px; margin-top:6px;
+  }
+
+  /* ---- TYPEWRITER CARD ---- */
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 28px; padding: 40px 36px; width:100%;
+    box-shadow: 0 10px 48px rgba(180,100,130,0.10), inset 0 1px 0 rgba(255,255,255,0.03);
+    position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background: radial-gradient(circle at 25% 15%, rgba(255,180,200,0.05) 0%, transparent 45%),
+                radial-gradient(circle at 75% 85%, rgba(255,200,170,0.04) 0%, transparent 45%);
+    pointer-events:none;
+  }
+  .card .typing-text {
+    font-size:1.1rem; line-height:2.5; color:#e0c8d0;
+    position:relative; z-index:1;
+    min-height:200px;
+  }
+  .card .typing-text .cursor-blink {
+    display:inline-block; width:2px; height:1.1em;
+    background:#ffb3c6;
+    animation: blink 0.7s step-end infinite;
+    vertical-align:text-bottom; margin-left:2px;
+  }
+  @keyframes blink {
+    0%,100% { opacity:1; } 50% { opacity:0; }
+  }
+  .card .typing-text .hl { color:#ffb3c6; font-weight:bold; }
+  .card .signature {
+    text-align:right; font-family:'Ma Shan Zheng',cursive;
+    font-size:1.7rem; color:#ffccd5; margin-top:24px;
+    position:relative; z-index:1; opacity:0;
+    transition: opacity 0.6s;
+  }
+  .card .signature.show { opacity:1; }
+
+  /* ---- SECTION TITLES ---- */
+  .section-title {
+    font-family:'Ma Shan Zheng',cursive; font-size:2rem;
+    background: linear-gradient(135deg, #ffccd5, #ffb3c6);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    text-align:center; letter-spacing:5px;
+  }
+
+  /* ---- DIVIDER ---- */
+  .divider { display:flex; align-items:center; gap:18px; width:100%; }
+  .divider .line { flex:1; height:1px; background: linear-gradient(90deg, transparent, rgba(255,180,200,0.3), transparent); }
+  .divider .rose { font-size:1.5rem; animation: heartbeat 2.2s ease-in-out infinite; }
+  @keyframes heartbeat {
+    0%,100% { transform:scale(1); }
+    14% { transform:scale(1.18); } 28% { transform:scale(1); }
+    42% { transform:scale(1.18); } 56% { transform:scale(1); }
+  }
+
+  /* ---- INTERACTIVE QUESTION ---- */
+  .question-box {
+    text-align:center; width:100%;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 28px; padding: 44px 36px;
+    box-shadow: 0 10px 48px rgba(180,100,130,0.10);
+  }
+  .question-box .q-text {
+    font-family:'Ma Shan Zheng',cursive; font-size:1.8rem;
+    color:#ffccd5; letter-spacing:4px; margin-bottom:28px;
+  }
+  .question-box .btn-row {
+    display:flex; justify-content:center; gap:24px; flex-wrap:wrap;
+  }
+  .question-box .btn {
+    padding:14px 48px; border-radius:40px;
+    font-family:'Ma Shan Zheng',cursive; font-size:1.3rem;
+    letter-spacing:3px; border:none; cursor:pointer;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    position:relative;
+  }
+  .btn-yes {
+    background: linear-gradient(135deg, #f48fb1, #e57373);
+    color: #fff; box-shadow: 0 6px 24px rgba(220,100,130,0.4);
+  }
+  .btn-yes:hover { transform:scale(1.08); box-shadow: 0 10px 36px rgba(220,100,130,0.6); }
+  .btn-no {
+    background: rgba(255,255,255,0.08); color: #e8ccd4;
+    border: 1px solid rgba(255,180,200,0.25);
+    transition: all 0.15s ease;
+  }
+  .btn-no.flee { transform:translate(var(--fx), var(--fy)); }
+
+  /* ---- CELEBRATION OVERLAY ---- */
+  .celebration-overlay {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    pointer-events:none; z-index:999;
+    display:none;
+  }
+  .celebration-overlay.active { display:block; }
+  .confetti-piece {
+    position:absolute; font-size:var(--s);
+    animation: confettiFall var(--d) linear forwards;
+    animation-delay: var(--dl);
+    top:-40px;
+  }
+  @keyframes confettiFall {
+    0% { transform:translateY(0) rotate(0deg); opacity:1; }
+    80% { opacity:1; }
+    100% { transform:translateY(110vh) rotate(var(--r)); opacity:0; }
+  }
+
+  /* ---- TWO COUNTERS ---- */
+  .counters-row {
+    display:flex; gap:20px; flex-wrap:wrap; justify-content:center; width:100%;
+  }
+  .counter-card {
+    flex:1; min-width:220px;
+    background: var(--card-bg);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--card-border);
+    border-radius:22px; padding:24px 20px; text-align:center;
+  }
+  .counter-card .c-label {
+    font-size:0.85rem; color:rgba(255,200,210,0.45); letter-spacing:2px; margin-bottom:8px;
+  }
+  .counter-card .c-num {
+    font-size:2.2rem;
+    background: linear-gradient(135deg, #ffb3c6, #ffccd5);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    font-weight:bold;
+  }
+  .counter-card .c-unit {
+    font-size:0.8rem; color:rgba(255,200,210,0.5); margin-top:4px;
+  }
+
+  /* ---- PHOTO CAROUSEL ---- */
+  .carousel-wrap {
+    width:100%; position:relative; border-radius:24px; overflow:hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    aspect-ratio: 16/10;
+    background: linear-gradient(135deg, rgba(255,180,200,0.08), rgba(255,150,180,0.04));
+    border: 1px solid var(--card-border);
+  }
+  .carousel-track { display:flex; height:100%; transition: transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94); }
+  .carousel-slide {
+    min-width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;
+    padding: 30px;
+  }
+  .carousel-slide .slide-emoji { font-size:3rem; margin-bottom:12px; }
+  .carousel-slide .slide-quote {
+    font-size:1.15rem; color:#e8ccd4; text-align:center;
+    line-height:2; letter-spacing:1px;
+    max-width:480px;
+    position:relative;
+  }
+  .carousel-slide .slide-quote::before { content:'\201C'; font-size:3rem; color:rgba(255,180,200,0.3); position:absolute; top:-20px; left:-16px; font-family:serif; }
+  .carousel-slide .slide-quote::after { content:'\201D'; font-size:3rem; color:rgba(255,180,200,0.3); position:absolute; bottom:-40px; right:-16px; font-family:serif; }
+  .carousel-btn {
+    position:absolute; top:50%; transform:translateY(-50%); z-index:5;
+    width:40px; height:40px; border-radius:50%;
+    background: rgba(255,200,210,0.2); border: 1px solid rgba(255,180,200,0.3);
+    color:#ffccd5; font-size:1.2rem; cursor:pointer;
+    backdrop-filter: blur(8px); transition: all 0.3s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .carousel-btn:hover { background:rgba(255,180,200,0.35); }
+  .carousel-btn.prev { left:12px; } .carousel-btn.next { right:12px; }
+  .carousel-dots { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:5; }
+  .carousel-dots .dot { width:8px; height:8px; border-radius:50%; background: rgba(255,200,210,0.3); transition: all 0.3s; cursor:pointer; }
+  .carousel-dots .dot.active { background:#ffb3c6; box-shadow: 0 0 8px rgba(255,150,180,0.6); }
+
+  /* ---- FLIP CARDS ---- */
+  .promises-grid {
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap:16px; width:100%;
+  }
+  .flip-card { aspect-ratio:3/4; perspective:800px; cursor:pointer; min-height:200px; }
+  .flip-card-inner {
+    width:100%; height:100%; position:relative;
+    transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); transform-style:preserve-3d;
+  }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-card-front, .flip-card-back {
+    position:absolute; width:100%; height:100%; backface-visibility:hidden;
+    border-radius:20px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:20px; gap:10px;
+  }
+  .flip-card-front {
+    background: linear-gradient(145deg, rgba(255,180,200,0.15), rgba(255,150,180,0.06));
+    border: 1px solid var(--card-border);
+  }
+  .flip-card-back {
+    background: linear-gradient(145deg, rgba(255,160,180,0.22), rgba(255,130,160,0.12));
+    border: 1px solid rgba(255,160,190,0.35); transform: rotateY(180deg);
+  }
+  .flip-card-front .front-emoji { font-size:2.5rem; }
+  .flip-card-front .front-label { color:#e8ccd4; font-size:0.95rem; letter-spacing:2px; text-align:center; }
+  .flip-card-back .back-text { color:#ffccd5; font-size:0.9rem; text-align:center; line-height:1.7; }
+
+  /* ---- TIMELINE ---- */
+  .timeline { width:100%; position:relative; padding-left:30px; }
+  .timeline::before {
+    content:''; position:absolute; left:12px; top:0; bottom:0; width:2px;
+    background: linear-gradient(180deg, rgba(255,180,200,0.6), rgba(255,180,200,0.1), rgba(255,180,200,0.6));
+  }
+  .timeline-item {
+    position:relative; margin-bottom:28px; padding:18px 20px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius:16px; backdrop-filter: blur(8px);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .timeline-item:hover { transform:translateX(6px); box-shadow: 0 8px 28px rgba(180,100,130,0.15); }
+  .timeline-item::before {
+    content:''; position:absolute; left:-24px; top:22px;
+    width:10px; height:10px; border-radius:50%;
+    background:#ffb3c6; box-shadow: 0 0 12px rgba(255,150,180,0.6);
+  }
+  .timeline-item.breakup::before { background:#886; box-shadow: 0 0 8px rgba(150,150,150,0.4); }
+  .timeline-item.reunion::before { background:#ff6b8a; box-shadow: 0 0 18px rgba(255,100,140,0.8); }
+  .timeline-item .tl-date { font-size:0.8rem; color:rgba(255,200,210,0.4); letter-spacing:2px; margin-bottom:4px; }
+  .timeline-item .tl-title { font-size:1.05rem; color:#ffccd5; letter-spacing:2px; }
+  .timeline-item .tl-desc { font-size:0.9rem; color:#d0b8c0; margin-top:6px; line-height:1.6; }
+
+  /* ---- MUSIC PLAYER ---- */
+  .music-player {
+    position:fixed; bottom:24px; right:24px; z-index:100;
+    display:flex; align-items:center; gap:10px;
+    background: rgba(30,10,20,0.7); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,180,200,0.25); border-radius:40px;
+    padding:8px 16px 8px 8px; font-size:0.85rem; color:#e8ccd4;
+  }
+  .music-btn {
+    width:38px; height:38px; border-radius:50%;
+    background: linear-gradient(135deg, #f48fb1, #e57373);
+    border:none; cursor:pointer; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 16px rgba(220,100,130,0.3);
+  }
+  .music-btn:hover { transform:scale(1.08); }
+  .music-btn.playing { animation: musicPulse 1.2s ease-in-out infinite; }
+  @keyframes musicPulse {
+    0%,100% { box-shadow: 0 4px 16px rgba(220,100,130,0.4); }
+    50% { box-shadow: 0 8px 32px rgba(220,100,130,0.7); }
+  }
+  .music-player .song-name { color:rgba(255,200,210,0.7); font-size:0.8rem; letter-spacing:1px; }
+  .music-player .visualizer { display:flex; gap:2px; align-items:flex-end; height:18px; }
+  .music-player .visualizer .bar {
+    width:3px; background: linear-gradient(180deg, #ffb3c6, #f48fb1);
+    border-radius:2px; animation: vizBar 0.8s ease-in-out infinite; animation-delay: var(--vd);
+  }
+  @keyframes vizBar { 0%,100% { height:6px; } 50% { height:18px; } }
+
+  /* ---- CLICK HEARTS ---- */
+  .click-heart {
+    position:fixed; pointer-events:none; z-index:1000; font-size:28px;
+    animation: popHeart 1.3s ease-out forwards;
+  }
+  @keyframes popHeart {
+    0% { transform:translate(-50%,-50%) scale(0); opacity:1; }
+    35% { transform:translate(-50%,-50%) scale(1.5); opacity:1; }
+    100% { transform:translate(-50%,calc(-50% - 140px)) scale(0.5); opacity:0; }
+  }
+
+  /* ---- FIREWORKS ---- */
+  .firework { position:fixed; pointer-events:none; z-index:999; }
+  .firework-particle {
+    position:absolute; width:4px; height:4px; border-radius:50%;
+    animation: fireworkBurst 1.4s ease-out forwards; animation-delay: var(--fd);
+  }
+  @keyframes fireworkBurst {
+    0% { transform:translate(0,0) scale(1); opacity:1; }
+    100% { transform:translate(var(--fx),var(--fy)) scale(0); opacity:0; }
+  }
+
+  /* ---- HIDDEN CONTENT (revealed after Yes) ---- */
+  .after-yes { display:none; flex-direction:column; align-items:center; gap:44px; width:100%; }
+  .after-yes.show { display:flex; }
+
+  /* ---- FOOTER ---- */
+  .footer { text-align:center; color:rgba(255,200,210,0.25); font-size:0.85rem; padding-bottom:40px; letter-spacing:2px; }
+
+  /* ---- CLICK HINT ---- */
+  .click-hint { text-align:center;color:rgba(255,200,210,0.45);font-size:0.9rem;letter-spacing:2px; }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 480px) {
+    .hero h1 { font-size:2rem; letter-spacing:4px; }
+    .card { padding:24px 16px; }
+    .card .typing-text { font-size:0.9rem; line-height:2.1; }
+    .question-box .q-text { font-size:1.4rem; }
+    .question-box .btn { padding:12px 36px; font-size:1.1rem; }
+    .canvas-hero { max-width:300px; }
+    .promises-grid { grid-template-columns: repeat(2, 1fr); gap:10px; }
+    .counters-row { flex-direction:column; gap:14px; }
+    .music-player { bottom:12px; right:12px; padding:6px 12px 6px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="stars" id="stars"></div>
+<div class="floating-hearts" id="floatingHearts"></div>
+<div class="petals" id="petals"></div>
+<div class="celebration-overlay" id="celebrationOverlay"></div>
+
+<div class="container">
+
+  <!-- ===== CANVAS: 碎心重圆 ===== -->
+  <div class="canvas-hero reveal" id="canvasHero">
+    <canvas id="heartCanvas"></canvas>
+    <span class="tap-hint" id="tapHint">👆 点击这里</span>
+  </div>
+
+  <!-- ===== HERO ===== -->
+  <div class="hero reveal">
+    <h1>兜兜转转，还是你</h1>
+    <p class="subtitle">—— 戴雪静，绕再远的路我也放不下你 ——</p>
+  </div>
+
+  <!-- ===== TYPEWRITER LOVE LETTER ===== -->
+  <div class="card reveal" id="typingCard">
+    <div class="typing-text" id="typingText"></div>
+    <div class="signature" id="signatureLine">—— 永远爱雪静的我 💕</div>
+  </div>
+
+  <!-- ===== DIVIDER ===== -->
+  <div class="divider reveal"><span class="line"></span><span class="rose">💔</span><span class="line"></span></div>
+
+  <!-- ===== INTERACTIVE QUESTION ===== -->
+  <div class="question-box reveal" id="questionBox">
+    <p class="q-text">戴雪静，你愿意和我重新开始吗？</p>
+    <div class="btn-row">
+      <button class="btn btn-yes" id="btnYes" onclick="sayYes()">💝 我愿意</button>
+      <button class="btn btn-no" id="btnNo">🥺 不要</button>
+    </div>
+  </div>
+
+  <!-- ===== AFTER YES: Hidden content revealed ===== -->
+  <div class="after-yes" id="afterYes">
+
+    <!-- Counters -->
+    <div class="section-title">⏱️ 时间知道一切</div>
+    <div class="counters-row">
+      <div class="counter-card">
+        <div class="c-label">💔 分开的日子</div>
+        <div class="c-num" id="apartDays">...</div>
+        <div class="c-unit">天 · 那段时间我每天都在想你</div>
+      </div>
+      <div class="counter-card">
+        <div class="c-label">💝 重新在一起</div>
+        <div class="c-num" id="reunionDays">...</div>
+        <div class="c-unit">天 · 这一次，我再也不会放手</div>
+      </div>
+    </div>
+
+    <div class="divider"><span class="line"></span><span class="rose">💌</span><span class="line"></span></div>
+
+    <!-- Love Quotes Carousel -->
+    <div class="section-title">💌 想对你说的话</div>
+    <div class="carousel-wrap" id="carousel">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <button class="carousel-btn prev" onclick="moveCarousel(-1)">‹</button>
+      <button class="carousel-btn next" onclick="moveCarousel(1)">›</button>
+      <div class="carousel-dots" id="carouselDots"></div>
+    </div>
+
+    <div class="divider"><span class="line"></span><span class="rose">🤞</span><span class="line"></span></div>
+
+    <!-- Promise Cards -->
+    <div class="section-title">🤞 这一次，我答应你</div>
+    <div class="promises-grid" id="promisesGrid"></div>
+
+    <div class="divider"><span class="line"></span><span class="rose">📖</span><span class="line"></span></div>
+
+    <!-- Timeline -->
+    <div class="section-title">💞 我们的故事</div>
+    <div class="timeline" id="timeline"></div>
+
+    <!-- Click hint -->
+    <p class="click-hint">✨ 点击任意位置释放小心心 ｜ 双击释放烟花 🎆</p>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Made with ❤️ 只为你一个人</p>
+      <p style="margin-top:6px;font-size:0.75rem;">失而复得，是这世上最珍贵的词语 💕</p>
+    </div>
+
+  </div><!-- /after-yes -->
+
+</div><!-- /container -->
+
+<!-- Music Player -->
+<div class="music-player" id="musicPlayer">
+  <button class="music-btn" id="musicBtn" onclick="toggleMusic()" title="播放音乐">🎵</button>
+  <div class="visualizer" id="visualizer"></div>
+  <span class="song-name">Can't Help Falling in Love</span>
+</div>
+
+<script>
+  // ==================== CONFIG ====================
+  // ✏️ 把这里改成你们关键的日期！
+  const FIRST_TOGETHER  = '2024-01-01'; // 第一次在一起的日期
+  const BROKE_UP        = '2024-06-01'; // 分手的日期
+  const BACK_TOGETHER   = '2024-08-01'; // 复合的日期
+
+  // ==================== DOM REFS ====================
+  const cursorGlow = document.getElementById('cursorGlow');
+  const starsEl = document.getElementById('stars');
+  const floatingHeartsEl = document.getElementById('floatingHearts');
+  const petalsEl = document.getElementById('petals');
+  const canvasHero = document.getElementById('canvasHero');
+  const canvas = document.getElementById('heartCanvas');
+  const ctx = canvas.getContext('2d');
+  const tapHint = document.getElementById('tapHint');
+  const typingText = document.getElementById('typingText');
+  const signatureLine = document.getElementById('signatureLine');
+  const questionBox = document.getElementById('questionBox');
+  const btnNo = document.getElementById('btnNo');
+  const btnYes = document.getElementById('btnYes');
+  const afterYes = document.getElementById('afterYes');
+  const celebrationOverlay = document.getElementById('celebrationOverlay');
+  const carouselTrack = document.getElementById('carouselTrack');
+  const carouselDots = document.getElementById('carouselDots');
+  const musicBtn = document.getElementById('musicBtn');
+  const visualizer = document.getElementById('visualizer');
+  const promisesGrid = document.getElementById('promisesGrid');
+  const timeline = document.getElementById('timeline');
+
+  // ==================== CURSOR GLOW ====================
+  document.addEventListener('mousemove', e => {
+    cursorGlow.style.left = e.clientX + 'px';
+    cursorGlow.style.top = e.clientY + 'px';
+  });
+
+  // ==================== SPARKLE TRAIL ====================
+  let sparkleThrottle = 0;
+  const sparkleEmojis = ['✨','💫','⭐','🌟','💖'];
+  document.addEventListener('mousemove', e => {
+    if (window.innerWidth <= 768) return;
+    sparkleThrottle++;
+    if (sparkleThrottle % 3 !== 0) return;
+    const s = document.createElement('span');
+    s.className = 'sparkle';
+    s.textContent = sparkleEmojis[Math.floor(Math.random()*sparkleEmojis.length)];
+    s.style.left = e.clientX + (Math.random()-0.5)*20 + 'px';
+    s.style.top = e.clientY + (Math.random()-0.5)*20 + 'px';
+    s.style.fontSize = (Math.random()*10+8) + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 800);
+  });
+
+  // ==================== STARS ====================
+  (function() {
+    let html = '';
+    for (let i=0; i<110; i++) {
+      html += `<div class="star" style="left:${Math.random()*100}%;top:${Math.random()*100}%;width:${Math.random()*2.4+1}px;height:${Math.random()*2.4+1}px;--dur:${Math.random()*3.5+2}s;--delay:${Math.random()*5}s;"></div>`;
+    }
+    starsEl.innerHTML = html;
+  })();
+
+  // ==================== FLOATING HEARTS ====================
+  (function() {
+    const hearts = ['💕','💖','💗','💝','🩷','💓','🌸'];
+    let html = '';
+    for (let i=0; i<20; i++) {
+      const h = hearts[Math.floor(Math.random()*hearts.length)];
+      html += `<div class="float-heart" style="left:${Math.random()*95}%;--size:${Math.random()*20+14}px;--dur:${Math.random()*14+16}s;--delay:${Math.random()*18}s;--rot:${Math.random()*60-30}deg;">${h}</div>`;
+    }
+    floatingHeartsEl.innerHTML = html;
+  })();
+
+  // ==================== ROSE PETALS ====================
+  (function() {
+    const petalEmojis = ['🌹','🌸','💮','🏵️','🌷','🍂','💐','🌺'];
+    let html = '';
+    for (let i=0; i<26; i++) {
+      const p = petalEmojis[Math.floor(Math.random()*petalEmojis.length)];
+      html += `<div class="petal" style="left:${Math.random()*100}%;--size:${Math.random()*18+12}px;--dur:${Math.random()*10+10}s;--delay:${Math.random()*14}s;--drift:${Math.random()*120-60}px;--spin:${Math.random()*720-360}deg;">${p}</div>`;
+    }
+    petalsEl.innerHTML = html;
+  })();
+
+  // ==================== CANVAS: 碎心重圆 ====================
+  let particles = [];
+  const PARTICLE_COUNT = 200;
+  let heartFormed = false;
+  let animationId;
+
+  function heartX(t) { return 16 * Math.pow(Math.sin(t), 3); }
+  function heartY(t) { return -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t)); }
+
+  function resizeCanvas() {
+    const rect = canvasHero.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+  }
+
+  function createParticles(scattered) {
+    particles = [];
+    const w = canvasHero.clientWidth;
+    const h = canvasHero.clientHeight;
+    const scale = Math.min(w, h) * 0.024;
+    const cx = w / 2;
+    const cy = h / 2 - 10;
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const t = (i / PARTICLE_COUNT) * Math.PI * 2;
+      const hx = heartX(t) * scale + cx;
+      const hy = heartY(t) * scale + cy;
+
+      let startX, startY;
+      if (scattered) {
+        // Scatter to random positions outside the heart area
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * (Math.max(w,h)*0.7) + Math.max(w,h)*0.1;
+        startX = cx + Math.cos(angle) * dist;
+        startY = cy + Math.sin(angle) * dist;
+      } else {
+        startX = hx;
+        startY = hy;
+      }
+
+      particles.push({
+        x: startX, y: startY,
+        targetX: hx, targetY: hy,
+        startX, startY,
+        size: Math.random() * 3.5 + 1.5,
+        color: ['#ffb3c6','#ff9eb5','#ffccd5','#f48fb1','#ffd1dc','#ff8fa3','#ff6b8a','#ffe0e6'][Math.floor(Math.random()*8)],
+        delay: Math.random() * 0.6,
+        twinkle: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  function drawParticles(progress) {
+    const w = canvasHero.clientWidth;
+    const h = canvasHero.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // Glow
+    if (progress > 0.3 && heartFormed) {
+      const glowAlpha = Math.min((progress-0.3)/0.7, 1) * 0.3;
+      ctx.fillStyle = `rgba(255,150,180,${glowAlpha})`;
+      ctx.beginPath();
+      const scale = Math.min(w, h) * 0.024;
+      const cx = w/2, cy = h/2 - 10;
+      for (let t=0; t<Math.PI*2; t+=0.02) {
+        const px = heartX(t)*scale + cx;
+        const py = heartY(t)*scale + cy;
+        t===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    particles.forEach(p => {
+      const t = Math.max(0, Math.min(1, (progress - p.delay) / (1 - p.delay)));
+      const eased = 1 - Math.pow(1-t, 3); // ease-out
+      p.x = p.startX + (p.targetX - p.startX) * eased;
+      p.y = p.startY + (p.targetY - p.startY) * eased;
+
+      const alpha = 0.5 + Math.sin(p.twinkle + progress*4) * 0.3 + 0.3;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  let animStartTime = 0;
+  const ANIM_DURATION = 2500;
+
+  function animateHeart(ts) {
+    if (!animStartTime) animStartTime = ts;
+    const elapsed = ts - animStartTime;
+    const progress = Math.min(elapsed / ANIM_DURATION, 1);
+    drawParticles(progress);
+
+    if (progress < 1) {
+      animationId = requestAnimationFrame(animateHeart);
+    } else {
+      heartFormed = true;
+      // Gentle pulse loop
+      pulseLoop();
+    }
+  }
+
+  function pulseLoop() {
+    if (!heartFormed) return;
+    const w = canvasHero.clientWidth;
+    const h = canvasHero.clientHeight;
+    ctx.clearRect(0,0,w,h);
+
+    const glowAlpha = 0.2 + Math.sin(Date.now()/1200) * 0.1;
+    ctx.fillStyle = `rgba(255,150,180,${glowAlpha})`;
+    ctx.beginPath();
+    const scale = Math.min(w,h)*0.024;
+    const cx=w/2, cy=h/2-10;
+    for (let t=0; t<Math.PI*2; t+=0.02) {
+      const px=heartX(t)*scale+cx; const py=heartY(t)*scale+cy;
+      t===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    }
+    ctx.closePath(); ctx.fill();
+
+    const pulseScale = 1 + Math.sin(Date.now()/800)*0.03;
+    particles.forEach(p => {
+      const midX = (p.startX + p.targetX)/2;
+      const midY = (p.startY + p.targetY)/2;
+      const dx = (p.targetX - (p.targetX - (p.targetX-midX)))*pulseScale;
+      const px = p.targetX + (p.targetX - cx)*(-0.02 + Math.sin(Date.now()/800)*0.03);
+      const py = p.targetY + (p.targetY - cy)*(-0.02 + Math.sin(Date.now()/800)*0.03);
+      const alpha = 0.5 + Math.sin(p.twinkle + Date.now()/600)*0.3 + 0.3;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(px, py, p.size, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    animationId = requestAnimationFrame(pulseLoop);
+  }
+
+  function startHeartAnimation() {
+    if (animationId) cancelAnimationFrame(animationId);
+    heartFormed = false;
+    animStartTime = 0;
+    createParticles(true);
+    resizeCanvas();
+    animationId = requestAnimationFrame(animateHeart);
+    tapHint.style.display = 'none';
+  }
+
+  canvasHero.addEventListener('click', startHeartAnimation);
+  // Auto-start after short delay
+  setTimeout(startHeartAnimation, 1500);
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    if (heartFormed) {
+      createParticles(false);
+    }
+  });
+
+  // ==================== TYPEWRITER EFFECT ====================
+  const loveLetter = [
+    '戴雪静，',
+    '',
+    '写下这三个字的时候，心里有一种说不出的感觉。光是念你的名字，就觉得<span class="hl">温柔</span>。',
+    '',
+    '我们分开过。',
+    '',
+    '那段时间，我每天都在想，如果当时能<span class="hl">多理解你一点</span>，如果当时能<span class="hl">多让步一次</span>，如果当时能好好跟你说一句「对不起」，是不是就不会走到那一步。',
+    '',
+    '你知道吗，失去你之后我才真正明白，<span class="hl">你对我有多重要</span>。',
+    '',
+    '习惯了有你的日子，突然变成一个人，整个世界都变得空荡荡的。走过的每条街、听过的每首歌、刷到的每个视频——都在提醒我，<span class="hl">我好想你</span>。',
+    '',
+    '我甚至会不自觉地翻我们的聊天记录，看我们以前的照片，一遍又一遍。明知道看了会更难受，可就是忍不住。因为至少那一刻，感觉你还在。',
+    '',
+    '都说失去后才懂得珍惜，以前觉得这句话很俗。直到真的失去了你，才知道——<span class="hl">这是真的</span>。',
+    '',
+    '所以，谢谢你。',
+    '',
+    '谢谢你愿意再给我一次机会。谢谢你愿意重新相信我。谢谢你，没有真的走远。',
+    '',
+    '这一次，我不会再让你失望了。',
+    '',
+    '我会更加珍惜你，把每一天都当成最后一天来爱你。我会记住你喜欢什么、讨厌什么，记住你每一个小小的习惯。我会学着更好地沟通，不再把话藏在心里。',
+    '',
+    '你笑的时候，我想在你身边；你哭的时候，我更要在你身边。你开心的事我想第一个听，你难过的事我想第一个替你分担。',
+    '',
+    '戴雪静，你不是我权衡利弊后的选择——',
+    '',
+    '你是我明知不可为而为之的<span class="hl">坚定</span>，是我绕再远的路也放不下的<span class="hl">执念</span>，是我这辈子最想留住的<span class="hl">幸运</span>。',
+    '',
+    '兜兜转转，还是你。',
+    '',
+    '<span class="hl">还好，还是你。</span>',
+  ];
+
+  function typeWriter(lines, el, callback) {
+    let lineIdx = 0;
+    let charIdx = 0;
+    let currentHTML = '';
+    const speed = 40;
+
+    function type() {
+      if (lineIdx >= lines.length) {
+        el.innerHTML = currentHTML;
+        if (callback) callback();
+        return;
+      }
+      const line = lines[lineIdx];
+      if (charIdx < line.length) {
+        // Handle HTML tags — skip them as a whole
+        if (line[charIdx] === '<') {
+          const end = line.indexOf('>', charIdx);
+          if (end !== -1) {
+            currentHTML += line.substring(charIdx, end+1);
+            charIdx = end + 1;
+            el.innerHTML = currentHTML + '<span class="cursor-blink"></span>';
+            setTimeout(type, speed);
+            return;
+          }
+        }
+        currentHTML += line[charIdx];
+        charIdx++;
+        el.innerHTML = currentHTML + '<span class="cursor-blink"></span>';
+        setTimeout(type, speed);
+      } else {
+        currentHTML += '<br>';
+        lineIdx++;
+        charIdx = 0;
+        el.innerHTML = currentHTML + '<span class="cursor-blink"></span>';
+        setTimeout(type, speed * 2);
+      }
+    }
+    type();
+  }
+
+  // Start typewriter when visible
+  const typingObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !typingText.innerHTML) {
+        typeWriter(loveLetter, typingText, () => {
+          signatureLine.classList.add('show');
+        });
+        typingObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  typingObserver.observe(document.getElementById('typingCard'));
+
+  // ==================== INTERACTIVE BUTTONS ====================
+  // Playful "No" button
+  btnNo.addEventListener('mouseenter', () => {
+    const maxX = window.innerWidth - btnNo.offsetWidth - 20;
+    const maxY = window.innerHeight - btnNo.offsetHeight - 20;
+    const rx = (Math.random() - 0.5) * 260;
+    const ry = (Math.random() - 0.5) * 160;
+    btnNo.style.setProperty('--fx', rx + 'px');
+    btnNo.style.setProperty('--fy', ry + 'px');
+    btnNo.classList.add('flee');
+  });
+  btnNo.addEventListener('mouseleave', () => {
+    btnNo.classList.remove('flee');
+  });
+  btnNo.addEventListener('click', () => {
+    btnNo.textContent = ['🥺 再想想嘛', '😢 真的不要吗', '💔 我会伤心的', '😭 求求你了', '🙏 再给我一次机会'][Math.floor(Math.random()*5)];
+  });
+
+  // Yes button
+  function sayYes() {
+    // Celebration
+    showCelebration();
+    // Show after-yes content
+    afterYes.classList.add('show');
+    // Hide question box
+    questionBox.style.display = 'none';
+    // Scroll to revealed content
+    setTimeout(() => {
+      afterYes.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 600);
+    // Build all the revealed content
+    buildCarousel();
+    startCarouselAuto();
+    buildPromises();
+    buildTimeline();
+    updateCounters();
+    setInterval(updateCounters, 60000);
+  }
+
+  // ==================== CELEBRATION ====================
+  function showCelebration() {
+    celebrationOverlay.classList.add('active');
+    const emojis = ['🎉','🎊','💖','💕','💝','✨','💗','🎆','❤️','🥂','💐','🌟','💘','🩷'];
+    let html = '';
+    for (let i=0; i<80; i++) {
+      html += `<span class="confetti-piece" style="
+        left:${Math.random()*100}%;
+        --s:${Math.random()*24+16}px;
+        --d:${Math.random()*2+2}s;
+        --dl:${Math.random()*1.5}s;
+        --r:${Math.random()*720-360}deg;
+      ">${emojis[Math.floor(Math.random()*emojis.length)]}</span>`;
+    }
+    celebrationOverlay.innerHTML = html;
+    setTimeout(() => { celebrationOverlay.classList.remove('active'); }, 4000);
+  }
+
+  // ==================== TWO COUNTERS ====================
+  function updateCounters() {
+    const apartStart = new Date(BROKE_UP);
+    const reunionStart = new Date(BACK_TOGETHER);
+    const now = new Date();
+    const apartDays = Math.max(0, Math.floor((reunionStart - apartStart) / 86400000));
+    const reunionDays = Math.max(0, Math.floor((now - reunionStart) / 86400000));
+    document.getElementById('apartDays').textContent = apartDays;
+    document.getElementById('reunionDays').textContent = reunionDays;
+  }
+
+  // ==================== PHOTO CAROUSEL ====================
+  // ✏️ 想对她说的情话，可以自己改！
+  const photos = [
+    { emoji: '💕', caption: '兜兜转转这么久，才发现我的世界少了你就不完整。' },
+    { emoji: '💗', caption: '分开的那些天，我每天都在想——如果当时抱紧你就好了。' },
+    { emoji: '💖', caption: '谢谢你愿意再给我一次机会，这一次我不会让你输。' },
+    { emoji: '💝', caption: '你是我做过最正确的决定，也是我最想留住的幸运。' },
+    { emoji: '💘', caption: '不是所有的错过都能重来，所以我们格外珍贵。' },
+    { emoji: '💓', caption: '从今以后，你的快乐我来守护，你的难过我来分担。' },
+    { emoji: '🩷', caption: '失而复得之后才明白——你比什么都重要。' },
+    { emoji: '💞', caption: '这一次，我会用一辈子来证明，你的选择是对的。' },
+  ];
+  let currentSlide = 0;
+  let carouselInterval;
+
+  function buildCarousel() {
+    carouselTrack.innerHTML = photos.map(p => `
+      <div class="carousel-slide">
+        <span class="slide-emoji">${p.emoji}</span>
+        <span class="slide-quote">${p.caption}</span>
+      </div>
+    `).join('');
+    carouselDots.innerHTML = photos.map((_,i) => `
+      <span class="dot${i===0?' active':''}" onclick="goToSlide(${i})"></span>
+    `).join('');
+  }
+  function moveCarousel(dir) {
+    currentSlide = (currentSlide + dir + photos.length) % photos.length;
+    updateCarousel();
+  }
+  function goToSlide(n) { currentSlide = n; updateCarousel(); }
+  function updateCarousel() {
+    carouselTrack.style.transform = `translateX(-${currentSlide*100}%)`;
+    document.querySelectorAll('.carousel-dots .dot').forEach((d,i) => {
+      d.classList.toggle('active', i===currentSlide);
+    });
+  }
+  function startCarouselAuto() {
+    carouselInterval = setInterval(() => moveCarousel(1), 4000);
+  }
+  document.getElementById('carousel').addEventListener('mouseenter', () => clearInterval(carouselInterval));
+  document.getElementById('carousel').addEventListener('mouseleave', startCarouselAuto);
+
+  // ==================== PROMISE CARDS ====================
+  const promises = [
+    { emoji: '💪', front: '更加珍惜', back: '失而复得的感觉，让我更懂得珍惜。每一天我都会当作最后一天来爱你。' },
+    { emoji: '👂', front: '学会倾听', back: '以前不够懂你，现在我会用心听你说的每一句话，理解你的每一种情绪。' },
+    { emoji: '🫂', front: '永不放手', back: '经历过失去的痛苦，我再也不会轻易放开你的手。这一次，是一辈子。' },
+    { emoji: '💬', front: '好好沟通', back: '不冷战、不赌气、不隔夜。有什么事，我们一起面对，一起解决。' },
+    { emoji: '🌍', front: '带你去看世界', back: '想弥补所有遗憾，和你一起去每一个我们说好要去的地方。' },
+    { emoji: '🏠', front: '给你一个家', back: '不是房子，是有我、有你、有爱的地方。一个永远为你亮着灯的家。' },
+  ];
+  function buildPromises() {
+    promisesGrid.innerHTML = promises.map((p,i) => `
+      <div class="flip-card" id="flipCard${i}" onclick="flipCard(${i})">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="front-emoji">${p.emoji}</span>
+            <span class="front-label">${p.front}</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="back-text">${p.back}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  function flipCard(i) { document.getElementById('flipCard'+i).classList.toggle('flipped'); }
+
+  // ==================== TIMELINE ====================
+  // ✏️ 改成你们真实的故事！
+  const storyEvents = [
+    { date: '初识那天', title: '💫 命运的相遇', desc: '那天阳光正好，你刚好出现。在茫茫人海中，一眼就注意到了你。', type:'normal' },
+    { date: '那一天', title: '💝 我们在一起了', desc: '这辈子最开心的决定。从那天起，我的世界被你填满。', type:'normal' },
+    { date: '那段日子', title: '💔 我们分开了', desc: '是我做得不够好。分开的每一天，我都在后悔，都在想怎么才能重新挽回你。', type:'breakup' },
+    { date: '那段空白', title: '🌧️ 没有你的日子', desc: '我走过我们一起去过的地方，听我们听过的歌，才发现你早已成为我生命里不可分割的一部分。', type:'breakup' },
+    { date: '那一天', title: '💖 我们又在一起了', desc: '谢谢你愿意再给我一次机会。当你说"好"的那一刻，我觉得全世界都亮了。', type:'reunion' },
+    { date: '现在', title: '🌈 重新开始', desc: '每一天都比昨天更珍惜你。这一次，我会用行动证明，你的选择是对的。', type:'normal' },
+    { date: '未来', title: '💍 未完待续', desc: '我们的故事重新开始了。这一次，我想和你一起写到最后一句。', type:'normal' },
+  ];
+  function buildTimeline() {
+    timeline.innerHTML = storyEvents.map(e => `
+      <div class="timeline-item ${e.type}">
+        <div class="tl-date">${e.date}</div>
+        <div class="tl-title">${e.title}</div>
+        <div class="tl-desc">${e.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  // ==================== CLICK HEARTS ====================
+  document.addEventListener('click', function(e) {
+    const heart = document.createElement('span');
+    heart.className = 'click-heart';
+    const emojis = ['❤️','💕','💖','💗','💝','✨','💓','🩷','💘','💞'];
+    heart.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    heart.style.left = e.clientX + 'px';
+    heart.style.top = e.clientY + 'px';
+    heart.style.fontSize = (Math.random()*20+24) + 'px';
+    document.body.appendChild(heart);
+    setTimeout(() => heart.remove(), 1400);
+  });
+
+  // ==================== FIREWORKS (DOUBLE CLICK) ====================
+  document.addEventListener('dblclick', function(e) {
+    const colors = ['#ffb3c6','#ff9eb5','#ffccd5','#f48fb1','#ffd1dc','#ffe0e6','#ffc2d1','#fff0f3','#ff8fa3','#ffb8c9'];
+    const container = document.createElement('div');
+    container.className = 'firework';
+    container.style.left = e.clientX + 'px';
+    container.style.top = e.clientY + 'px';
+    const count = 36;
+    for (let i=0; i<count; i++) {
+      const p = document.createElement('div');
+      p.className = 'firework-particle';
+      const angle = (i/count)*Math.PI*2;
+      const dist = Math.random()*80+50;
+      p.style.setProperty('--fx', Math.cos(angle)*dist+'px');
+      p.style.setProperty('--fy', Math.sin(angle)*dist+'px');
+      p.style.setProperty('--fd', Math.random()*0.3+'s');
+      p.style.background = colors[Math.floor(Math.random()*colors.length)];
+      p.style.width = (Math.random()*4+2)+'px';
+      p.style.height = (Math.random()*4+2)+'px';
+      container.appendChild(p);
+    }
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 1800);
+  });
+
+  // ==================== MUSIC PLAYER ====================
+  (function() {
+    let html = '';
+    for (let i=0; i<7; i++) html += `<div class="bar" style="--vd:${i*0.1}s;"></div>`;
+    visualizer.innerHTML = html;
+  })();
+
+  let isMusicPlaying = false;
+  let audioCtx = null;
+  let oscillators = null;
+
+  function toggleMusic() {
+    if (isMusicPlaying) {
+      stopTone();
+      musicBtn.classList.remove('playing');
+      musicBtn.textContent = '🎵';
+      isMusicPlaying = false;
+    } else {
+      startTone();
+      musicBtn.classList.add('playing');
+      musicBtn.textContent = '⏸';
+      isMusicPlaying = true;
+    }
+  }
+
+  function startTone() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = [261.63, 329.63, 392.00, 493.88];
+    oscillators = freqs.map(f => {
+      const osc = audioCtx.createOscillator();
+      const gn = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+      gn.gain.setValueAtTime(0.035, audioCtx.currentTime);
+      osc.connect(gn);
+      gn.connect(audioCtx.destination);
+      osc.start();
+      return { osc, gn };
+    });
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    lfo.frequency.setValueAtTime(0.3, audioCtx.currentTime);
+    lfoGain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+    lfo.connect(lfoGain);
+    lfoGain.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+    lfo.start();
+    oscillators.push({ osc: lfo, gn: lfoGain, lfo: true });
+  }
+
+  function stopTone() {
+    if (oscillators) {
+      oscillators.forEach(o => { try { o.osc.stop(); } catch(e){} });
+      oscillators = null;
+    }
+  }
+
+  // ==================== SCROLL REVEAL ====================
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => observer.observe(el));
+
+  setTimeout(() => {
+    revealEls.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight) el.classList.add('visible');
+    });
+  }, 200);
+
+  // ==================== CONSOLE EASTER EGG ====================
+  console.log(`
+  💕  *** 戴雪静，你发现了彩蛋！*** 💕
+
+  🌧️  分开的时候，我以为永远失去你了。
+  🌈  谢谢你还愿意回到我身边。
+
+  你是我的失而复得，
+  是我的劫后余生，
+  是我这辈子最想珍惜的人。
+
+  戴雪静，这一次——
+  我会用一辈子来证明，你没有选错。
+
+  while (true) {
+    love('戴雪静');
+    neverLetGo();
+  }
+
+  —— 重新追回你的程序员 💝
+  `);
+
+  // ==================== INIT RESIZE ====================
+  resizeCanvas();
+</script>
+</body>
+</html>
