@@ -497,16 +497,15 @@
     border-radius: 3px; overflow: hidden;
     background: #000;
   }
-  .polaroid-vid .vid-poster {
+  .polaroid-vid .vid-cover {
     position: absolute; inset: 0;
     width: 100%; height: 100%; object-fit: cover;
     z-index: 1;
-    transition: opacity 0.3s ease;
   }
-  .polaroid-vid video {
+  .polaroid-vid .vid-src {
     position: absolute; inset: 0;
     width: 100%; height: 100%; object-fit: cover; pointer-events: none;
-    z-index: 0;
+    z-index: 0; opacity: 0;
   }
   .polaroid-vid .play-badge {
     position: absolute; inset: 0; z-index: 2;
@@ -906,6 +905,23 @@
       我喜欢你——<span class="emphasis">全部的你</span>。
     </p>
     <p>
+      有时候我会想，<br>
+      如果这辈子没有遇见你，<br>
+      我的人生会是什么样子。<br>
+      大概就像没有星星的夜空，<br>
+      没有颜色的画布，<br>
+      没有旋律的歌。<br>
+      还好，<span class="emphasis">我不用活在那个世界</span>。
+    </p>
+    <p>
+      我喜欢和你一起做最普通的事。<br>
+      一起散步，一起吃饭，一起发呆。<br>
+      只要有你在身边，<br>
+      最平凡的日子也会<span class="emphasis">闪闪发光</span>。<br>
+      你就是我生命里，<br>
+      那道最温柔也最坚定的光。
+    </p>
+    <p>
       未来的路还很长，<br>
       也许会有磕磕绊绊，<br>
       但我想和你一起走。<br>
@@ -914,15 +930,27 @@
       去实现那些我们<span class="emphasis">共同的梦想</span>。
     </p>
     <p>
+      我想和你有个家。<br>
+      不用很大，有你有我就好。<br>
+      早上一起醒来，晚上一起入睡。<br>
+      养一只猫，或者一只狗，<br>
+      窝在沙发上看电影，<br>
+      听你说今天发生了什么。<br>
+      <span class="emphasis">这就是我想要的幸福</span>。
+    </p>
+    <p>
       谢谢你选择了我。<br>
       谢谢你让我成为那个<br>
       可以保护你、陪伴你、<br>
-      给你肩膀靠的人。
+      给你肩膀靠的人。<br>
+      遇见你，是我这辈子<br>
+      <span class="emphasis">最正确的决定</span>。
     </p>
     <p>
       我爱你。<br>
       不只是今天，<br>
-      是<span class="emphasis">每一个今天</span>。
+      不只是明天，<br>
+      是<span class="emphasis">每一个今天和每一个明天</span>。
     </p>
     <div class="closing">—— 属于你的我 💕</div>
   </div>
@@ -1053,13 +1081,13 @@
         </div>
         <!-- Videos -->
         <div class="carousel-card polaroid video-polaroid" onclick="playVideo(0)">
-          <div class="polaroid-vid"><img class="vid-poster" src="photo5.jpg" alt=""><video src="video1.mp4" preload="none" muted playsinline></video><div class="play-badge">▶</div></div>
+          <div class="polaroid-vid"><canvas class="vid-cover" data-video="video1.mp4"></canvas><video class="vid-src" src="video1.mp4" preload="auto" muted playsinline></video><div class="play-badge">▶</div></div>
         </div>
         <div class="carousel-card polaroid video-polaroid" onclick="playVideo(1)">
-          <div class="polaroid-vid"><img class="vid-poster" src="photo6.jpg" alt=""><video src="video2.mp4" preload="none" muted playsinline></video><div class="play-badge">▶</div></div>
+          <div class="polaroid-vid"><canvas class="vid-cover" data-video="video2.mp4"></canvas><video class="vid-src" src="video2.mp4" preload="auto" muted playsinline></video><div class="play-badge">▶</div></div>
         </div>
         <div class="carousel-card polaroid video-polaroid" onclick="playVideo(2)">
-          <div class="polaroid-vid"><img class="vid-poster" src="photo7.jpg" alt=""><video src="video3.mp4" preload="none" muted playsinline></video><div class="play-badge">▶</div></div>
+          <div class="polaroid-vid"><canvas class="vid-cover" data-video="video3.mp4"></canvas><video class="vid-src" src="video3.mp4" preload="auto" muted playsinline></video><div class="play-badge">▶</div></div>
         </div>
       </div>
       <button class="carousel-arrow carousel-next" onclick="moveCarousel(1)">›</button>
@@ -1620,6 +1648,38 @@ function addPhotos(e) {
   }
   e.target.value = '';
 }
+
+// ==================== VIDEO FRAME CAPTURE ====================
+(function() {
+  var videos = document.querySelectorAll('.vid-src');
+  videos.forEach(function(video) {
+    var canvas = video.parentElement.querySelector('.vid-cover');
+    if (!canvas) return;
+    var captured = false;
+    function captureFrame() {
+      if (captured) return;
+      captured = true;
+      var ctx = canvas.getContext('2d');
+      var w = 186, h = 186;
+      canvas.width = w * 2; canvas.height = h * 2;
+      try { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); } catch(e) {}
+    }
+    video.addEventListener('loadeddata', function() {
+      video.currentTime = 0.5;
+    }, { once: true });
+    video.addEventListener('seeked', captureFrame, { once: true });
+    // Fallback: capture after 3 seconds even if seek doesn't fire
+    setTimeout(function() {
+      if (!captured && video.readyState >= 2) {
+        var ctx = canvas.getContext('2d');
+        var w = 186, h = 186;
+        canvas.width = w * 2; canvas.height = h * 2;
+        try { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); } catch(e) {}
+        captured = true;
+      }
+    }, 3000);
+  });
+})();
 
 // ==================== VIDEO MESSAGE ====================
 var _videos = [
