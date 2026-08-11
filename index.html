@@ -669,6 +669,134 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
   }
+
+  /* Shooting stars in hero */
+  .shooting-star {
+    position: absolute; pointer-events: none; z-index: 1;
+    width: var(--ss-w); height: 2px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,200,180,0.4), transparent);
+    border-radius: 50%;
+    top: var(--ss-top); left: var(--ss-left);
+    animation: shootStar var(--ss-dur) linear infinite;
+    animation-delay: var(--ss-delay);
+    opacity: 0;
+    filter: blur(1px);
+    box-shadow: 0 0 6px 2px rgba(255,255,255,0.6);
+  }
+  @keyframes shootStar {
+    0%   { transform: translateX(0) translateY(0); opacity: 0; }
+    5%   { opacity: 1; }
+    20%  { opacity: 0.8; }
+    100% { transform: translateX(var(--ss-dx)) translateY(var(--ss-dy)); opacity: 0; }
+  }
+
+  /* Sweet Jar section */
+  #sweet-jar {
+    background: linear-gradient(180deg, #1a0c14 0%, #2a1022 40%, #3d182c 80%, #1a0c14 100%);
+  }
+  .jar-inner { position: relative; z-index: 2; text-align: center; width: 90%; max-width: 480px; }
+  .jar-inner h2 {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(30px, 5vw, 44px);
+    color: #d4876a;
+    margin-bottom: 10px;
+  }
+  .jar-inner .jar-sub {
+    color: rgba(255,255,255,0.45); font-size: 14px; letter-spacing: 2px; margin-bottom: 28px;
+  }
+  .jar-container {
+    position: relative;
+    display: inline-flex; flex-direction: column; align-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.3s ease;
+    user-select: none;
+  }
+  .jar-container:active { transform: scale(0.95); }
+  .jar-glow {
+    position: absolute; top: 50%; left: 50%;
+    width: 160px; height: 160px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(255,180,120,0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: jarGlowPulse 2.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes jarGlowPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.8; }
+  }
+  .jar-emoji {
+    font-size: 100px;
+    filter: drop-shadow(0 8px 20px rgba(255,180,120,0.4));
+    animation: jarFloat 3s ease-in-out infinite;
+    position: relative; z-index: 2;
+    line-height: 1.2;
+  }
+  @keyframes jarFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .jar-label {
+    font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 2px;
+    margin-top: 8px;
+  }
+  .jar-note-pop {
+    position: fixed; z-index: 200; pointer-events: none;
+    font-size: 16px; color: #fff;
+    background: linear-gradient(135deg, rgba(212,135,106,0.95), rgba(196,84,106,0.9));
+    padding: 12px 22px; border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(196,84,106,0.4);
+    animation: noteRise 3s ease-out forwards;
+    max-width: 280px; text-align: center;
+    letter-spacing: 0.5px; line-height: 1.5;
+  }
+  @keyframes noteRise {
+    0%   { transform: translateY(0) scale(0.5) rotate(-5deg); opacity: 0; }
+    20%  { transform: translateY(-20px) scale(1.05) rotate(2deg); opacity: 1; }
+    70%  { transform: translateY(-100px) scale(1) rotate(0deg); opacity: 0.9; }
+    100% { transform: translateY(-180px) scale(0.7) rotate(3deg); opacity: 0; }
+  }
+  .jar-spark {
+    position: fixed; pointer-events: none; z-index: 199;
+    font-size: 20px;
+    animation: jarSparkle 1.8s ease-out forwards;
+  }
+  @keyframes jarSparkle {
+    0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--jx), var(--jy)) scale(0); opacity: 0; }
+  }
+
+  /* Constellation stars in ending */
+  .const-star {
+    position: absolute; pointer-events: none; z-index: 1;
+    font-size: var(--cs-size);
+    top: var(--cs-top); left: var(--cs-left);
+    animation: constTwinkle var(--cs-dur) ease-in-out infinite;
+    animation-delay: var(--cs-delay);
+    opacity: 0.4;
+  }
+  @keyframes constTwinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+  .const-line {
+    position: absolute; pointer-events: none; z-index: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      rgba(255,220,200,var(--cl-op)) 0%,
+      rgba(255,220,200,var(--cl-op)) 100%);
+    transform-origin: left center;
+    top: var(--cl-top); left: var(--cl-left);
+    width: var(--cl-w);
+    transform: rotate(var(--cl-rot));
+    animation: constLinePulse 4s ease-in-out infinite;
+    animation-delay: var(--cl-delay);
+  }
+  @keyframes constLinePulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.5; }
+  }
   .ending-inner h2 {
     font-family: 'Dancing Script', cursive;
     font-size: clamp(36px, 7vw, 56px);
@@ -811,6 +939,10 @@
     0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
     80%  { opacity: 0.6; }
     100% { transform: translateY(105vh) rotate(var(--fall-rot)); opacity: 0; }
+  }
+  @keyframes popUp {
+    0%   { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-60px) scale(0.3); opacity: 0; }
   }
 
   /* ========== Responsive ========== */
@@ -1021,6 +1153,19 @@
   </div>
 </section>
 
+<!-- ==================== SWEET JAR ==================== -->
+<section class="section" id="sweet-jar">
+  <div class="jar-inner">
+    <h2>🍯 甜蜜罐子</h2>
+    <p class="jar-sub">点一下罐子，倒出一颗甜甜的话</p>
+    <div class="jar-container" id="jarContainer" onclick="openJar(event)">
+      <div class="jar-glow"></div>
+      <div class="jar-emoji">🫙</div>
+      <div class="jar-label">👆 点我打开</div>
+    </div>
+  </div>
+</section>
+
 <!-- ==================== SECTION 7: LOVE VOWS ==================== -->
 <section class="section" id="vows">
   <div class="vows-inner">
@@ -1043,6 +1188,12 @@
       </div>
       <div class="vow-card" onclick="this.classList.toggle('flipped')">
         <div class="flip"><div class="front">♾️</div><div class="back">爱你，直到时间的尽头</div></div>
+      </div>
+      <div class="vow-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip"><div class="front">🎁</div><div class="back">把你宠成这个世界上最幸福的人</div></div>
+      </div>
+      <div class="vow-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip"><div class="front">🛡️</div><div class="back">在你害怕的时候，做你的盔甲</div></div>
       </div>
     </div>
   </div>
@@ -1121,7 +1272,9 @@
       我想和你一起，<br>
       看春天的花开、夏天的星空、<br>
       秋天的落叶、冬天的初雪。<br>
-      一年四季，<span class="em">一生一世</span>。
+      一年四季，<span class="em">一生一世</span>。<br><br>
+      和你在一起的每个平凡日子，<br>
+      都是我心里<span class="em">最珍贵的奇迹</span>。
     </div>
     <div class="ending-divider"></div>
     <div class="ending-promise">♾️ 从此以后 · 永远 ♾️</div>
@@ -1251,6 +1404,25 @@
     });
   }, { threshold: 0.05 });
   heartObs.observe(document.getElementById('hero'));
+
+  // Shooting stars across hero
+  (function() {
+    var heroEl = document.getElementById('hero');
+    var starCount = window._isMobile ? 3 : 6;
+    for (var i = 0; i < starCount; i++) {
+      var star = document.createElement('div');
+      star.className = 'shooting-star';
+      star.style.cssText =
+        '--ss-w:' + (Math.random() * 60 + 50) + 'px;' +
+        '--ss-top:' + (Math.random() * 60 + 10) + '%;' +
+        '--ss-left:' + (Math.random() * 50 + 5) + '%;' +
+        '--ss-dx:' + (Math.random() * 200 + 200) + 'px;' +
+        '--ss-dy:' + (Math.random() * 100 + 40) + 'px;' +
+        '--ss-dur:' + (Math.random() * 3 + 3) + 's;' +
+        '--ss-delay:' + (Math.random() * 5) + 's;';
+      heroEl.appendChild(star);
+    }
+  })();
 })();
 
 // ==================== TYPEWRITER ====================
@@ -1262,6 +1434,8 @@
     '',
     '认识你之前，我以为世界就是那样——',
     '平凡的、重复的、没有惊喜的。',
+    '日复一日，年复一年，',
+    '没有什么值得期待，也没有什么想要记住。',
     '',
     '直到你出现了。',
     '',
@@ -1271,17 +1445,40 @@
     '',
     '你笑起来的样子，',
     '让我相信世界上真的有<span class="highlight">魔法</span>。',
+    '你低下头时睫毛的影子，',
+    '你说话时微微歪着脑袋的习惯，',
+    '你在认真想事情时咬嘴唇的小动作——',
+    '我都记得。每一个都记得。',
     '',
     '和你在一起的每一天，',
     '都是我最珍贵的<span class="highlight">礼物</span>。',
+    '哪怕只是坐在你旁边什么都不做，',
+    '哪怕只是听你讲你今天吃了什么，',
+    '哪怕只是在手机屏幕上看到你的名字亮起——',
+    '这些最普通的事，',
+    '因为你，都变得<span class="highlight">不普通</span>了。',
     '',
     '我想陪你走过春夏秋冬，',
     '想在你开心时和你一起笑，',
     '想在你难过时给你肩膀靠，',
-    '想和你一起，<span class="highlight">慢慢变老</span>。',
+    '想在你累的时候给你一个拥抱，',
+    '想在你迷茫的时候握住你的手说：',
+    '<span class="highlight">我在呢，不怕</span>。',
+    '',
+    '我想和你一起，<span class="highlight">慢慢变老</span>。',
+    '老到头发白了，老到牙齿掉了，',
+    '老到坐在摇椅上晒太阳的时候，',
+    '我还能转过头，看到你在旁边。',
+    '那大概是我能想到的，',
+    '最好的结局。',
     '',
     '谢谢你来到我的生命里。',
+    '谢谢你选择了我。',
+    '谢谢你在那么多的人里，',
+    '把手伸向了我。',
+    '',
     '遇见你，是我这辈子<span class="highlight">最幸运的事</span>。',
+    '爱你，是我这辈子<span class="highlight">最正确的决定</span>。',
   ];
 
   let lineIdx = 0, charIdx = 0;
@@ -1760,7 +1957,131 @@ function closeVideo() {
     }
   }, { threshold: 0.2 });
   obs.observe(section);
+
+  // Constellation stars in ending
+  var constSpawned = false;
+  function spawnConstStar() {
+    var el = document.createElement('span');
+    el.className = 'const-star';
+    el.style.cssText =
+      '--cs-size:' + (Math.random() * 8 + 8) + 'px;' +
+      '--cs-top:' + (Math.random() * 80 + 5) + '%;' +
+      '--cs-left:' + (Math.random() * 90 + 5) + '%;' +
+      '--cs-dur:' + (Math.random() * 2 + 2) + 's;' +
+      '--cs-delay:' + (Math.random() * 2) + 's;';
+    el.textContent = ['✨','⭐','💫','🌟'][Math.floor(Math.random() * 4)];
+    section.appendChild(el);
+    // Auto-remove after some time
+    setTimeout(function() { if (el.parentNode) el.remove(); }, 16000);
+    return el;
+  }
+  function drawConstLine(s1, s2, delay, op) {
+    var r1 = s1.getBoundingClientRect();
+    var r2 = s2.getBoundingClientRect();
+    var sr = section.getBoundingClientRect();
+    var x1 = r1.left + r1.width/2 - sr.left;
+    var y1 = r1.top + r1.height/2 - sr.top;
+    var x2 = r2.left + r2.width/2 - sr.left;
+    var y2 = r2.top + r2.height/2 - sr.top;
+    var dx = x2 - x1, dy = y2 - y1;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    var line = document.createElement('div');
+    line.className = 'const-line';
+    line.style.cssText =
+      '--cl-top:' + y1 + 'px;' +
+      '--cl-left:' + x1 + 'px;' +
+      '--cl-w:' + dist + 'px;' +
+      '--cl-rot:' + angle + 'deg;' +
+      '--cl-op:' + (op || 0.4) + ';' +
+      '--cl-delay:' + (delay || 0) + 's;';
+    section.appendChild(line);
+    setTimeout(function() { if (line.parentNode) line.remove(); }, 10000);
+  }
+  var constObs = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting && !constSpawned) {
+      constSpawned = true;
+      // Spawn constellation stars in waves
+      var stars = [];
+      for (var i = 0; i < 16; i++) {
+        setTimeout(function() {
+          stars.push(spawnConstStar());
+          // Every few stars, try drawing lines between nearby ones
+          if (stars.length >= 2 && stars.length % 3 === 0) {
+            var a = stars[stars.length - 1];
+            var b = stars[stars.length - 2];
+            drawConstLine(a, b, Math.random() * 3, 0.35);
+          }
+        }, i * 600);
+      }
+    }
+  }, { threshold: 0.3 });
+  constObs.observe(section);
 })();
+
+// ==================== SWEET JAR ====================
+var _jarNotes = [
+  '你是我一天中最期待的那个瞬间 💕',
+  '你的笑声，比任何音乐都好听 🎵',
+  '看到你微笑，我觉得整个世界都值得 🌍',
+  '和你在一起，无聊的事都变成了冒险 🗺️',
+  '你靠在我身上的时候，时间都停了 ⏰',
+  '你的小习惯，我都想记一辈子 📝',
+  '你的存在，让我的每一天都有意义 ☀️',
+  '我想做你最温柔的依靠 🫂',
+  '有你在，平凡的日子就是诗 ✨',
+  '你是我这辈子最想珍惜的人 💎',
+  '谢谢你让我可以爱你 💖',
+  '你的可爱，我一天都说不完 🥰',
+  '遇见你之后，我才知道什么是心动 💓',
+  '你是我所有浪漫灵感的来源 🌹',
+  '世界上最甜的糖，也没有你甜 🍬',
+  '你的声音是我的充电器 🔋',
+  '我想和你一起，慢慢变老 👴👵',
+  '你是我生命里的奇迹 🦄',
+  '每天醒来第一个想到的就是你 ☀️',
+  '你让我的世界变得完整 🧩',
+  '和你聊天是最幸福的事 💬',
+  '你的一切我都不想错过 📸',
+  '我想把这个罐子装满你喜欢的甜 💝',
+  '你在身边，风都是甜的 🍃',
+  '你是我的小太阳，永远温暖 🌤️',
+];
+var _jarNoteIdx = 0;
+function openJar(e) {
+  var note = _jarNotes[_jarNoteIdx % _jarNotes.length];
+  _jarNoteIdx++;
+  // Pop note near the jar
+  var jar = document.getElementById('jarContainer');
+  var rect = jar.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top;
+  var noteEl = document.createElement('div');
+  noteEl.className = 'jar-note-pop';
+  noteEl.textContent = note;
+  noteEl.style.left = (cx - 140) + 'px';
+  noteEl.style.top = (cy - 60) + 'px';
+  document.body.appendChild(noteEl);
+  setTimeout(function() { noteEl.remove(); }, 3200);
+  // Sparkle burst
+  var icons = ['💕','✨','💖','🍯','💝','🌟','🩷','💫','🌸','🍬'];
+  for (var i = 0; i < 14; i++) {
+    var s = document.createElement('span');
+    s.className = 'jar-spark';
+    s.textContent = icons[Math.floor(Math.random() * icons.length)];
+    s.style.left = cx + 'px';
+    s.style.top = cy + 'px';
+    s.style.setProperty('--jx', (Math.random() - 0.5) * 200 + 'px');
+    s.style.setProperty('--jy', (Math.random() - 0.5) * 180 - 40 + 'px');
+    document.body.appendChild(s);
+    setTimeout(function() { s.remove(); }, 2000);
+  }
+  // Shake
+  jar.style.animation = 'none';
+  jar.offsetHeight;
+  jar.style.animation = 'jarFloat 0.15s ease 3';
+  setTimeout(function() { jar.style.animation = 'jarFloat 3s ease-in-out infinite'; }, 500);
+}
 
 // ==================== MUSIC PLAYER ====================
 (function() {
@@ -1832,6 +2153,18 @@ var _reasons = [
   '和你在一起，无聊的事都变得有趣 🎈',
   '你是我所有浪漫念头的起点和终点 💫',
   '喜欢你，是我做过最好的决定 💯',
+  '你睡着的样子，是这世上最美的画 🎨',
+  '你的小脾气也很可爱，真的 😤→😍',
+  '每次手机亮起你的消息，我的心就多跳一下 💬',
+  '和你一起吃过的每一顿饭，都好吃一百倍 🍜',
+  '想到未来有你在，我就什么都不怕了 🦸',
+  '你的名字，是我写过最好看的三个字 ✍️',
+  '你的温柔，藏在你做的小事里 🎀',
+  '有你在的地方，就是我想去的地方 📍',
+  '你的存在，就是我每天早起的动力 ⏰',
+  '我喜欢你——比昨天多一点，比明天少一点 📐',
+  '你让我第一次觉得，等待一个人回消息是可以笑着等的 📱',
+  '你的一切，我都想参与——包括你的无聊和沉默 🤫',
 ];
 var _lastReasonIdx = -1;
 
