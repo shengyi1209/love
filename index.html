@@ -437,37 +437,41 @@
     font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 2px; margin-bottom: 20px;
   }
 
-  /* Carousel */
-  .carousel-container {
+  /* ========== 3D Ring Carousel ========== */
+  .carousel-scene {
     position: relative;
-    display: flex; align-items: center;
+    width: 100%; height: 400px;
+    perspective: 1000px;
     margin: 0 auto;
-  }
-  .carousel-track {
-    display: flex; gap: 12px;
-    overflow-x: auto; overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    padding: 8px 4px 16px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .carousel-track::-webkit-scrollbar { display: none; }
-
-  .carousel-card {
-    flex: 0 0 auto;
-    scroll-snap-align: center;
-    border-radius: 14px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: grab;
     -webkit-tap-highlight-color: transparent;
-    position: relative;
   }
-  .carousel-card:hover {
-    transform: scale(1.03);
+  .carousel-scene:active { cursor: grabbing; }
+  .carousel-scene.dragging { cursor: grabbing; }
+  .carousel-ring {
+    position: absolute;
+    width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    /* JS controls: transform: rotateY(...) */
+    will-change: transform;
   }
+  .carousel-ring.smooth {
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Each card in the ring */
+  .ring-card {
+    position: absolute;
+    left: 50%; top: 50%;
+    /* transform set by JS: rotateY(θ) translateZ(r) rotateY(-θ) */
+    border-radius: 6px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    backface-visibility: hidden;
+    transition: opacity 0.5s ease;
+    /* cards far from front get dimmed */
+  }
+  .ring-card.dim { opacity: 0.3; pointer-events: none; }
 
   /* All polaroid cards (photos + videos) */
   .polaroid {
@@ -476,15 +480,7 @@
     border-radius: 6px;
     padding: 7px 7px 32px 7px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-    animation: polaroidIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  @keyframes polaroidIn {
-    from { opacity: 0; transform: scale(0.5) rotate(-5deg); }
-    to { opacity: 1; transform: scale(1) rotate(0deg); }
-  }
-  .polaroid:nth-child(odd) { transform: rotate(-2deg); }
-  .polaroid:nth-child(even) { transform: rotate(1.5deg); }
-  .polaroid:hover { transform: rotate(0deg) scale(1.04) !important; }
   .polaroid > img {
     width: 186px; height: 186px; object-fit: cover;
     border-radius: 3px; display: block;
@@ -511,8 +507,6 @@
     position: absolute; inset: 0; z-index: 2;
     display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,0.15);
-  }
-  .polaroid-vid .play-badge {
     color: #fff; font-size: 0;
   }
   .polaroid-vid .play-badge::after {
@@ -538,23 +532,25 @@
 
   /* Carousel arrows */
   .carousel-arrow {
-    position: absolute; z-index: 10;
-    width: 40px; height: 40px; border-radius: 50%;
+    position: absolute; z-index: 20;
+    top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.15);
     color: #fff;
-    font-size: 24px;
+    font-size: 26px;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.3s ease;
     -webkit-tap-highlight-color: transparent;
+    line-height: 1;
   }
   .carousel-arrow:hover {
     background: rgba(212,135,106,0.2);
     border-color: rgba(212,135,106,0.4);
   }
-  .carousel-prev { left: -46px; }
-  .carousel-next { right: -46px; }
+  .carousel-prev { left: 8px; }
+  .carousel-next { right: 8px; }
 
   /* Dots */
   .carousel-dots {
@@ -616,22 +612,24 @@
   }
 
   @media (max-width: 768px) {
-    .carousel-container { width: 100%; }
-    .carousel-track { gap: 10px; padding: 6px 2px 12px; }
-    .polaroid { width: 170px; height: 230px; padding: 5px 5px 25px 5px; }
-    .polaroid > img { width: 160px; height: 160px; }
-    .polaroid-vid { width: 160px; height: 160px; }
-    .polaroid-vid .play-badge::after { width: 38px; height: 38px; }
-    .polaroid-vid .play-badge::before { border-left-width: 11px; border-top-width: 7px; border-bottom-width: 7px; }
-    .carousel-arrow { display: none; }
+    .carousel-scene { height: 330px; }
+    .polaroid { width: 165px; height: 225px; padding: 5px 5px 25px 5px; }
+    .polaroid > img { width: 155px; height: 155px; }
+    .polaroid-vid { width: 155px; height: 155px; }
+    .polaroid-vid .play-badge::after { width: 36px; height: 36px; }
+    .polaroid-vid .play-badge::before { border-left-width: 10px; border-top-width: 6px; border-bottom-width: 6px; }
+    .carousel-arrow { width: 34px; height: 34px; font-size: 20px; }
+    .carousel-prev { left: 2px; }
+    .carousel-next { right: 2px; }
     .vow-card { width: 100px; height: 100px; }
     .vow-card .front { font-size: 22px; }
     .vow-card .back { font-size: 12px; padding: 10px; }
   }
   @media (max-width: 380px) {
-    .polaroid { width: 150px; height: 210px; padding: 4px 4px 22px 4px; }
-    .polaroid > img { width: 142px; height: 142px; }
-    .polaroid-vid { width: 142px; height: 142px; }
+    .carousel-scene { height: 290px; }
+    .polaroid { width: 140px; height: 195px; padding: 4px 4px 20px 4px; }
+    .polaroid > img { width: 132px; height: 132px; }
+    .polaroid-vid { width: 132px; height: 132px; }
   }
 
   /* ========== Section 9: Romantic Ending ========== */
@@ -1218,45 +1216,43 @@
 <section class="section" id="memories-wall">
   <div class="memories-wall-inner">
     <h2>📸 我们的回忆</h2>
-    <p class="hint">左右滑动，看看我们的故事 💕</p>
-    <!-- Carousel -->
-    <div class="carousel-container">
-      <button class="carousel-arrow carousel-prev" onclick="moveCarousel(-1)">‹</button>
-      <div class="carousel-track" id="carouselTrack">
-        <!-- Photos -->
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo1.jpg')">
+    <p class="hint">拖拽旋转 · 看看我们的故事 💕</p>
+    <!-- 3D Ring Carousel -->
+    <div class="carousel-scene" id="carouselScene">
+      <button class="carousel-arrow carousel-prev" onclick="ringPrev()">‹</button>
+      <div class="carousel-ring" id="carouselRing">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo1.jpg" onclick="viewPhoto('photo1.jpg')">
           <img src="photo1.jpg" alt="我们的回忆">
         </div>
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo2.jpg')">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo2.jpg" onclick="viewPhoto('photo2.jpg')">
           <img src="photo2.jpg" alt="我们的回忆">
         </div>
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo3.jpg')">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo3.jpg" onclick="viewPhoto('photo3.jpg')">
           <img src="photo3.jpg" alt="我们的回忆">
         </div>
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo4.jpg')">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo4.jpg" onclick="viewPhoto('photo4.jpg')">
           <img src="photo4.jpg" alt="我们的回忆">
         </div>
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo5.jpg')">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo5.jpg" onclick="viewPhoto('photo5.jpg')">
           <img src="photo5.jpg" alt="我们的回忆">
         </div>
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo6.jpg')">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo6.jpg" onclick="viewPhoto('photo6.jpg')">
           <img src="photo6.jpg" alt="我们的回忆">
         </div>
-        <div class="carousel-card polaroid" onclick="viewPhoto('photo7.jpg')">
+        <div class="ring-card polaroid" data-type="photo" data-src="photo7.jpg" onclick="viewPhoto('photo7.jpg')">
           <img src="photo7.jpg" alt="我们的回忆">
         </div>
-        <!-- Videos -->
-        <div class="carousel-card polaroid video-polaroid" onclick="playVideo(0)">
+        <div class="ring-card polaroid video-polaroid" data-type="video" data-vid="0" onclick="playVideo(0)">
           <div class="polaroid-vid"><canvas class="vid-cover" data-video="video1.mp4"></canvas><video class="vid-src" src="video1.mp4" preload="auto" muted playsinline></video><div class="play-badge">▶</div></div>
         </div>
-        <div class="carousel-card polaroid video-polaroid" onclick="playVideo(1)">
+        <div class="ring-card polaroid video-polaroid" data-type="video" data-vid="1" onclick="playVideo(1)">
           <div class="polaroid-vid"><canvas class="vid-cover" data-video="video2.mp4"></canvas><video class="vid-src" src="video2.mp4" preload="auto" muted playsinline></video><div class="play-badge">▶</div></div>
         </div>
-        <div class="carousel-card polaroid video-polaroid" onclick="playVideo(2)">
+        <div class="ring-card polaroid video-polaroid" data-type="video" data-vid="2" onclick="playVideo(2)">
           <div class="polaroid-vid"><canvas class="vid-cover" data-video="video3.mp4"></canvas><video class="vid-src" src="video3.mp4" preload="auto" muted playsinline></video><div class="play-badge">▶</div></div>
         </div>
       </div>
-      <button class="carousel-arrow carousel-next" onclick="moveCarousel(1)">›</button>
+      <button class="carousel-arrow carousel-next" onclick="ringNext()">›</button>
     </div>
     <!-- Dots -->
     <div class="carousel-dots" id="carouselDots"></div>
@@ -1786,47 +1782,237 @@
   for (let i = 0; i < initialHearts; i++) setTimeout(dropHeart, i * 400);
 })();
 
-// ==================== CAROUSEL ====================
-var _carouselTotal = 10; // 7 photos + 3 videos
-function buildDots() {
-  var dots = document.getElementById('carouselDots');
-  dots.innerHTML = '';
-  for (var i = 0; i < _carouselTotal; i++) {
+// ==================== 3D RING CAROUSEL ====================
+var _ringEl = document.getElementById('carouselRing');
+var _sceneEl = document.getElementById('carouselScene');
+var _dotsEl = document.getElementById('carouselDots');
+var _ringCards = [];
+var _ringAngle = 0;          // current rotation in degrees
+var _targetAngle = 0;        // target for smooth animation
+var _autoSpeed = 0.08;       // degrees per frame auto-rotation
+var _autoPaused = false;
+var _autoTimeout = null;
+var _isDragging = false;
+var _dragPrevX = 0;
+var _dragVelocity = 0;
+var _momentumId = null;
+
+function _getRingRadius() {
+  var cardW = window.innerWidth <= 380 ? 140 : (window.innerWidth <= 768 ? 165 : 200);
+  return cardW * 1.8;
+}
+function _getCardMargin() {
+  var cardW = window.innerWidth <= 380 ? 140 : (window.innerWidth <= 768 ? 165 : 200);
+  var cardH = window.innerWidth <= 380 ? 195 : (window.innerWidth <= 768 ? 225 : 260);
+  return { ml: -cardW / 2, mt: -cardH / 2 };
+}
+
+function _refreshCards() {
+  _ringCards = Array.from(_ringEl.querySelectorAll('.ring-card'));
+}
+_refreshCards();
+
+function layoutRing(smooth) {
+  var cards = _ringCards;
+  var n = cards.length;
+  if (n === 0) return;
+  var radius = _getRingRadius();
+  var mg = _getCardMargin();
+  var angleStep = 360 / n;
+  for (var i = 0; i < n; i++) {
+    var a = i * angleStep;
+    cards[i].style.transform =
+      'rotateY(' + a + 'deg) translateZ(' + radius + 'px) rotateY(' + (-a) + 'deg)' +
+      ' translateX(' + mg.ml + 'px) translateY(' + mg.mt + 'px)';
+  }
+  // Enable smooth transitions for snap rotations
+  if (smooth) _ringEl.classList.add('smooth');
+  _ringEl.style.transform = 'rotateY(' + _targetAngle + 'deg)';
+  // Remove smooth class after transition
+  if (smooth) {
+    setTimeout(function() { _ringEl.classList.remove('smooth'); }, 750);
+  }
+  updateDots();
+  updateCardVisibility();
+}
+
+function updateCardVisibility() {
+  var cards = _ringCards;
+  var n = cards.length;
+  if (n === 0) return;
+  // Normalize angle to [0, 360)
+  var a = ((_ringAngle % 360) + 360) % 360;
+  var angleStep = 360 / n;
+  for (var i = 0; i < n; i++) {
+    var cardAngle = (i * angleStep + a) % 360;
+    // Distance from front (0°)
+    var dist = Math.abs(((cardAngle + 180) % 360) - 180); // 0 = front, 180 = back
+    if (dist > 100) {
+      cards[i].classList.add('dim');
+    } else {
+      cards[i].classList.remove('dim');
+    }
+  }
+}
+
+function updateDots() {
+  var n = _ringCards.length;
+  if (n === 0) return;
+  _dotsEl.innerHTML = '';
+  var angleStep = 360 / n;
+  var a = ((_ringAngle % 360) + 360) % 360;
+  // Find which card is closest to front
+  var closest = 0, closestDist = Infinity;
+  for (var i = 0; i < n; i++) {
+    var cardFrontAngle = ((-i * angleStep) % 360 + 360) % 360;
+    var diff = Math.abs(
+      (((cardFrontAngle - a) % 360) + 540) % 360 - 180
+    );
+    if (diff < closestDist) { closestDist = diff; closest = i; }
+  }
+  for (var i = 0; i < n; i++) {
     var d = document.createElement('span');
-    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.className = 'dot' + (i === closest ? ' active' : '');
     (function(idx) {
-      d.onclick = function() { scrollToCard(idx); };
+      d.onclick = function() { snapToCard(idx); };
     })(i);
-    dots.appendChild(d);
+    _dotsEl.appendChild(d);
   }
 }
-function scrollToCard(idx) {
-  var track = document.getElementById('carouselTrack');
-  var cards = track.querySelectorAll('.carousel-card');
-  if (idx >= 0 && idx < cards.length) {
-    cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+function snapToCard(idx) {
+  var n = _ringCards.length;
+  if (n === 0) return;
+  var angleStep = 360 / n;
+  // We want card `idx` to be at the front (angle 0)
+  _targetAngle = -idx * angleStep;
+  _ringAngle = _targetAngle;
+  pauseAuto(3000);
+  layoutRing(true);
+}
+
+function ringPrev() {
+  var n = _ringCards.length;
+  if (n === 0) return;
+  var angleStep = 360 / n;
+  _targetAngle += angleStep;
+  _ringAngle = _targetAngle;
+  pauseAuto(3000);
+  layoutRing(true);
+}
+
+function ringNext() {
+  var n = _ringCards.length;
+  if (n === 0) return;
+  var angleStep = 360 / n;
+  _targetAngle -= angleStep;
+  _ringAngle = _targetAngle;
+  pauseAuto(3000);
+  layoutRing(true);
+}
+
+function pauseAuto(ms) {
+  _autoPaused = true;
+  if (_autoTimeout) clearTimeout(_autoTimeout);
+  _autoTimeout = setTimeout(function() { _autoPaused = false; }, ms || 2500);
+}
+
+// Drag / swipe
+_sceneEl.addEventListener('mousedown', onDragStart);
+_sceneEl.addEventListener('touchstart', onDragStart, { passive: false });
+
+function onDragStart(e) {
+  if (e.target.closest('button')) return;
+  if (e.type === 'touchstart') {
+    if (e.touches.length !== 1) return;
   }
+  e.preventDefault();
+  _isDragging = true;
+  _sceneEl.classList.add('dragging');
+  _dragPrevX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+  _dragVelocity = 0;
+  _ringEl.classList.remove('smooth');
+  if (_momentumId) { cancelAnimationFrame(_momentumId); _momentumId = null; }
+  pauseAuto(3000);
 }
-function moveCarousel(dir) {
-  var track = document.getElementById('carouselTrack');
-  track.scrollBy({ left: dir * 220, behavior: 'smooth' });
+
+document.addEventListener('mousemove', function(e) {
+  if (!_isDragging) return;
+  var dx = e.clientX - _dragPrevX;
+  _dragVelocity = dx;
+  _dragPrevX = e.clientX;
+  _ringAngle += dx * 0.45;
+  _targetAngle = _ringAngle;
+  _ringEl.style.transform = 'rotateY(' + _ringAngle + 'deg)';
+  updateDots();
+  updateCardVisibility();
+});
+
+document.addEventListener('touchmove', function(e) {
+  if (!_isDragging) return;
+  var dx = e.touches[0].clientX - _dragPrevX;
+  _dragVelocity = dx;
+  _dragPrevX = e.touches[0].clientX;
+  _ringAngle += dx * 0.45;
+  _targetAngle = _ringAngle;
+  _ringEl.style.transform = 'rotateY(' + _ringAngle + 'deg)';
+  updateDots();
+  updateCardVisibility();
+}, { passive: false });
+
+document.addEventListener('mouseup', onDragEnd);
+document.addEventListener('touchend', onDragEnd);
+
+function onDragEnd() {
+  if (!_isDragging) return;
+  _isDragging = false;
+  _sceneEl.classList.remove('dragging');
+  // Momentum
+  var v = _dragVelocity;
+  if (Math.abs(v) > 2) {
+    var decay = 0.94;
+    function momentum() {
+      v *= decay;
+      _ringAngle += v * 0.45;
+      _targetAngle = _ringAngle;
+      _ringEl.style.transform = 'rotateY(' + _ringAngle + 'deg)';
+      updateDots();
+      updateCardVisibility();
+      if (Math.abs(v) > 0.15) {
+        _momentumId = requestAnimationFrame(momentum);
+      } else {
+        _momentumId = null;
+      }
+    }
+    _momentumId = requestAnimationFrame(momentum);
+  }
+  _dragVelocity = 0;
 }
-// Track visible card to update dots
+
+// Auto-rotation
+function autoRotate() {
+  if (!_isDragging && !_autoPaused && !_momentumId) {
+    _ringAngle += _autoSpeed;
+    _targetAngle = _ringAngle;
+    _ringEl.style.transform = 'rotateY(' + _ringAngle + 'deg)';
+    updateDots();
+    updateCardVisibility();
+  }
+  requestAnimationFrame(autoRotate);
+}
+
+// Initial layout & auto-rotate
 setTimeout(function() {
-  buildDots();
-  var track = document.getElementById('carouselTrack');
-  var cards = track.querySelectorAll('.carousel-card');
-  track.addEventListener('scroll', function() {
-    var center = track.scrollLeft + track.offsetWidth / 2;
-    var closestIdx = 0, closestDist = Infinity;
-    cards.forEach(function(c, i) {
-      var dist = Math.abs(c.offsetLeft + c.offsetWidth / 2 - center - track.offsetLeft);
-      if (dist < closestDist) { closestDist = dist; closestIdx = i; }
-    });
-    var dots = document.getElementById('carouselDots').querySelectorAll('.dot');
-    dots.forEach(function(d, i) { d.classList.toggle('active', i === closestIdx); });
-  });
-}, 100);
+  _refreshCards();
+  layoutRing(false);
+  requestAnimationFrame(autoRotate);
+}, 200);
+
+// Re-layout on resize
+window.addEventListener('resize', function() {
+  _refreshCards();
+  layoutRing(false);
+});
 
 // ==================== PHOTO VIEW ====================
 function viewPhoto(src) {
@@ -1845,27 +2031,22 @@ var _photoUrls = [];
 function addPhotos(e) {
   var files = e.target.files;
   if (!files || !files.length) return;
-  var track = document.getElementById('carouselTrack');
-  var dotsContainer = document.getElementById('carouselDots');
-
   for (var i = 0; i < files.length; i++) {
     (function(file) {
       var url = URL.createObjectURL(file);
       _photoUrls.push(url);
       var card = document.createElement('div');
-      card.className = 'carousel-card polaroid';
+      card.className = 'ring-card polaroid';
+      card.setAttribute('data-type', 'photo');
+      card.setAttribute('data-src', url);
+      card.onclick = function() { viewPhoto(url); };
       var img = document.createElement('img');
       img.src = url;
       img.alt = '我们的回忆';
-      img.onclick = function() { viewPhoto(url); };
       card.appendChild(img);
-      track.appendChild(card);
-      _carouselTotal++;
-      var dot = document.createElement('span');
-      dot.className = 'dot';
-      var idx = _carouselTotal - 1;
-      dot.onclick = function() { scrollToCard(idx); };
-      dotsContainer.appendChild(dot);
+      _ringEl.appendChild(card);
+      _refreshCards();
+      layoutRing(true);
     })(files[i]);
   }
   e.target.value = '';
