@@ -670,24 +670,39 @@
     50% { transform: translateY(-10px); }
   }
 
-  /* Shooting stars in hero */
-  .shooting-star {
+  /* Orbital rings circling the heart */
+  .orbit-star {
     position: absolute; pointer-events: none; z-index: 1;
-    width: var(--ss-w); height: 2px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,200,180,0.4), transparent);
-    border-radius: 50%;
-    top: var(--ss-top); left: var(--ss-left);
-    animation: shootStar var(--ss-dur) linear infinite;
-    animation-delay: var(--ss-delay);
-    opacity: 0;
-    filter: blur(1px);
-    box-shadow: 0 0 6px 2px rgba(255,255,255,0.6);
+    top: calc(50% - 40px); left: 50%;
+    width: 0; height: 0;
+    animation: orbitSpin var(--orb-dur) linear infinite;
+    animation-direction: var(--orb-dir);
+    animation-delay: var(--orb-delay);
   }
-  @keyframes shootStar {
-    0%   { transform: translateX(0) translateY(0); opacity: 0; }
-    5%   { opacity: 1; }
-    20%  { opacity: 0.8; }
-    100% { transform: translateX(var(--ss-dx)) translateY(var(--ss-dy)); opacity: 0; }
+  .orbit-star::after {
+    content: '';
+    position: absolute;
+    display: block;
+    width: var(--orb-size); height: var(--orb-size);
+    border-radius: 50%;
+    background: var(--orb-color);
+    box-shadow:
+      0 0 calc(var(--orb-size) * 2) var(--orb-color),
+      0 0 calc(var(--orb-size) * 5) var(--orb-color),
+      0 0 calc(var(--orb-size) * 8) rgba(255,200,180,0.5);
+    transform: translateX(var(--orb-r)) translateY(-50%);
+    top: 0; left: 0;
+    opacity: 0.85;
+    animation: orbPulse var(--orb-pulse) ease-in-out infinite;
+    animation-delay: var(--orb-delay);
+  }
+  @keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes orbPulse {
+    0%, 100% { opacity: 0.4; transform: translateX(var(--orb-r)) translateY(-50%) scale(0.6); }
+    50%      { opacity: 1;   transform: translateX(var(--orb-r)) translateY(-50%) scale(1.3); }
   }
 
   /* Sweet Jar section */
@@ -1405,22 +1420,32 @@
   }, { threshold: 0.05 });
   heartObs.observe(document.getElementById('hero'));
 
-  // Shooting stars across hero
+  // Orbiting rings around heart
   (function() {
     var heroEl = document.getElementById('hero');
-    var starCount = window._isMobile ? 3 : 6;
-    for (var i = 0; i < starCount; i++) {
-      var star = document.createElement('div');
-      star.className = 'shooting-star';
-      star.style.cssText =
-        '--ss-w:' + (Math.random() * 60 + 50) + 'px;' +
-        '--ss-top:' + (Math.random() * 60 + 10) + '%;' +
-        '--ss-left:' + (Math.random() * 50 + 5) + '%;' +
-        '--ss-dx:' + (Math.random() * 200 + 200) + 'px;' +
-        '--ss-dy:' + (Math.random() * 100 + 40) + 'px;' +
-        '--ss-dur:' + (Math.random() * 3 + 3) + 's;' +
-        '--ss-delay:' + (Math.random() * 5) + 's;';
-      heroEl.appendChild(star);
+    var colors = [
+      'rgba(255,255,255,0.9)', 'rgba(255,220,200,0.85)',
+      'rgba(255,180,160,0.8)', 'rgba(232,184,150,0.85)',
+      'rgba(255,200,210,0.8)', 'rgba(255,255,240,0.9)',
+    ];
+    var count = window._isMobile ? 8 : 14;
+    for (var i = 0; i < count; i++) {
+      var orb = document.createElement('div');
+      orb.className = 'orbit-star';
+      var radius = Math.random() * 130 + 60;           // radius from center
+      var size = Math.random() * 4 + 2;                 // dot size
+      var dur = Math.random() * 8 + 6;                  // orbit duration
+      var dir = Math.random() > 0.5 ? 'normal' : 'reverse';
+      var color = colors[Math.floor(Math.random() * colors.length)];
+      orb.style.cssText =
+        '--orb-r:' + radius + 'px;' +
+        '--orb-size:' + size + 'px;' +
+        '--orb-dur:' + dur + 's;' +
+        '--orb-dir:' + dir + ';' +
+        '--orb-delay:' + (Math.random() * -dur).toFixed(2) + 's;' +
+        '--orb-pulse:' + (Math.random() * 3 + 2) + 's;' +
+        '--orb-color:' + color + ';';
+      heroEl.appendChild(orb);
     }
   })();
 })();
