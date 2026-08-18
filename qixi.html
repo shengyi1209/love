@@ -109,7 +109,7 @@
   function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
 
   // ---------- Particle set ----------
-  var MORPH_COUNT = isMobile ? 1200 : 2800;
+  var MORPH_COUNT = isMobile ? 1500 : 3400;
   var BRIDGE_COUNT = 170;
   var morphParticles = [];
   var bridgeParticles = [];
@@ -598,7 +598,7 @@
       var rot = time * 0.0006 + heartRotation;
       var cosR = Math.cos(rot), sinR = Math.sin(rot);
       var hf = 12;                              // 透视焦距
-      var hScale = isHeartScene ? Math.min(W, H) * 0.020 : Math.min(W, H) * 0.075;
+      var hScale = isHeartScene ? Math.min(W, H) * 0.030 : Math.min(W, H) * 0.100;
       var hcx = W / 2;
       var hcy = isHeartScene ? H / 2 : H * 0.48;
       heartPulse = isHeartScene ? Math.pow(0.5 + 0.5 * Math.sin(time * 0.006), 4) : 0;
