@@ -83,7 +83,7 @@
   <span class="en">给我的最爱</span>
 </div>
 
-<div id="hint">轻点绽放爱心 · 左右拖动旋转</div>
+<div id="hint">轻点绽放爱心 · 拖动旋转花束</div>
 
 <script>
 (function() {
@@ -175,8 +175,24 @@
   var starIntensity = 0, targetStarIntensity = 0.5;   // 双星常亮
   var bridgeIntensity = 0, targetBridgeIntensity = 0.3; // 鹊桥常流
   var wobbleAmp = 0.25;
-  var heartRotation = 0;   // 拖拽旋转角度
+  var heartRotation = 0;   // 拖拽旋转角度（仅花束）
   var heartPulse = 0;      // 心跳脉冲（爱心 + 光晕共用）
+
+  // 心跳：模拟 lub-dub 双拍
+  function heartbeat(time) {
+    var cycle = 1200;
+    var ph = (time % cycle) / cycle;
+    if (ph < 0.12) return Math.sin(ph / 0.12 * Math.PI);
+    if (ph < 0.28) return Math.sin((ph - 0.12) / 0.16 * Math.PI) * 0.65;
+    return 0;
+  }
+  // 玫瑰花瓣颜色：花心深红 → 边缘浅粉
+  function roseColor(t) {
+    var hue = 345;
+    var sat = 88 + 12 * (1 - t);
+    var light = 34 + 42 * t;
+    return 'hsl(' + hue + ',' + sat + '%,' + light + '%)';
+  }
 
   // ---------- Text sampling ----------
   var textCache = {};
@@ -275,21 +291,19 @@
     }
   }
 
-  // ---------- 3D heart (立体爱心) ----------
-  function heart3DPoint() {
+  // ---------- 精致平面爱心（轮廓 + 填充 + 名字） ----------
+  function heart2DPoint() {
     var t = Math.random() * Math.PI * 2;
     var hx = 16 * Math.pow(Math.sin(t), 3);
     var hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-    var s = Math.random();                 // 内部填充
-    var depth = Math.sqrt(Math.max(0, 1 - s * s)); // 越靠边越薄，形成饱满立体感
-    var z = (Math.random() * 2 - 1) * depth * 3.2;
-    return { x: hx * s, y: hy * s, z: z };
+    var s = Math.random() < 0.55 ? 1 : Math.random(); // 55% 落在轮廓（清晰），其余填充内部
+    return { x: hx * s, y: hy * s };
   }
-  // 名字映射到爱心内部（立体）
+  // 名字映射到爱心内部（2D，始终正面可读）
   function mapNamePoints(text) {
     var sampled = sampleText(text);
     if (!sampled.pts.length) return [{ x: 0, y: 0 }];
-    var targetW = 18;                      // 名字宽度（heart units）
+    var targetW = 17;
     var targetH = targetW / sampled.aspect;
     var ox = -targetW / 2;
     var oyTop = 1.8 + targetH / 2;         // 垂直居中于爱心上部
@@ -299,21 +313,20 @@
   }
   function assignHeart3D() {
     var namePts = mapNamePoints('戴雪静');
-    var nameCount = Math.floor(morphParticles.length * 0.22);
+    var nameCount = Math.floor(morphParticles.length * 0.24);
     for (var i = 0; i < morphParticles.length; i++) {
       var p = morphParticles[i];
       if (i < nameCount) {
-        // 立体名字：在爱心前部，更亮更大
+        // 名字：亮白/金色，更大更亮，始终正面
         var np = namePts[(Math.random() * namePts.length) | 0];
         p.hx = np.x + (Math.random() - 0.5) * 0.3;
         p.hy = np.y + (Math.random() - 0.5) * 0.3;
-        p.hz = 1.2 + (Math.random() * 2 - 1) * 0.6;
         p.color = pick(NAME_COLORS);
         p.baseAlpha = 0.8 + Math.random() * 0.2;
         p.size = Math.random() * 2.0 + 1.5;
       } else {
-        var pt = heart3DPoint();
-        p.hx = pt.x; p.hy = pt.y; p.hz = pt.z;
+        var pt = heart2DPoint();
+        p.hx = pt.x; p.hy = pt.y;
         p.color = pick(HEART_COLORS);
         p.baseAlpha = Math.random() * 0.5 + 0.5;
       }
@@ -339,16 +352,17 @@
       var r = Math.random();
       var x, y, z;
       if (r < 0.66) {
-        // 花苞：螺旋花瓣
+        // 精致花苞：多层螺旋 + 花心→边缘渐变 + 花瓣起伏
         var c = centers[(Math.random() * centers.length) | 0];
-        var t = Math.random();
-        var phi = t * (4 + Math.random() * 3) * Math.PI * 2;
-        var rad = t * (2.6 + Math.random() * 0.9);
-        x = c.x + rad * Math.cos(phi) + (Math.random() - 0.5) * 0.25;
-        z = c.z + rad * Math.sin(phi) + (Math.random() - 0.5) * 0.25;
-        y = c.y + (1 - t) * 2.2 + (Math.random() - 0.5) * 0.3;
-        p.color = pick(ROSE_COLORS);
-        p.baseAlpha = Math.random() * 0.5 + 0.5;
+        var t = Math.pow(Math.random(), 1.4);   // 偏向花心，中心更密
+        var phi = t * (4.5 + Math.random() * 2.5) * Math.PI * 2;
+        var petal = 1 + 0.15 * Math.sin(phi * 2);
+        var rad = t * 2.8 * petal;
+        x = c.x + rad * Math.cos(phi) + (Math.random() - 0.5) * 0.18;
+        z = c.z + rad * Math.sin(phi) + (Math.random() - 0.5) * 0.18;
+        y = c.y + (1 - t) * 2.3 + (Math.random() - 0.5) * 0.22;
+        p.color = roseColor(t);
+        p.baseAlpha = 0.5 + 0.4 * (1 - t) + Math.random() * 0.15;
       } else if (r < 0.9) {
         // 花茎：向下收束
         var c2 = centers[(Math.random() * centers.length) | 0];
@@ -480,7 +494,7 @@
     var dx = p.x - lastDragX;
     lastDragX = p.x;
     if (Math.abs(p.x - dragStartX) > 12) moved = true;
-    if (moved && (scenes[sceneIdx].type === 'heart' || scenes[sceneIdx].type === 'rose')) {
+    if (moved && scenes[sceneIdx].type === 'rose') {
       heartRotation += dx * 0.012;
     }
   }
@@ -617,28 +631,41 @@
     starIntensity += (targetStarIntensity - starIntensity) * 0.03;
     bridgeIntensity += (targetBridgeIntensity - bridgeIntensity) * 0.03;
 
-    // --- 3D projection (heart / rose rotate + perspective) ---
+    // --- heart (2D beat) / rose (3D rotate) projection ---
     var isHeartScene = scenes[sceneIdx].type === 'heart';
     var isRoseScene = scenes[sceneIdx].type === 'rose';
     if (isHeartScene || isRoseScene) {
-      var rot = time * 0.0009 + heartRotation;
-      var cosR = Math.cos(rot), sinR = Math.sin(rot);
-      var hf = 12;                              // 透视焦距
-      var hScale = isHeartScene ? Math.min(W, H) * 0.030 : Math.min(W, H) * 0.100;
-      var hcx = W / 2;
-      var hcy = isHeartScene ? H / 2 : H * 0.48;
-      heartPulse = isHeartScene ? Math.pow(0.5 + 0.5 * Math.sin(time * 0.006), 4) : 0;
-      var throb = isHeartScene ? (1 + heartPulse * 0.07) : (1 + Math.sin(time * 0.0012) * 0.02);
-      for (var hi = 0; hi < morphParticles.length; hi++) {
-        var hp = morphParticles[hi];
-        if (!hp.threeD) continue;
-        var x3 = hp.hx * cosR + hp.hz * sinR;
-        var z3 = -hp.hx * sinR + hp.hz * cosR;
-        var persp = hf / (hf - z3);
-        hp.tx = hcx + x3 * hScale * throb * persp;
-        hp.ty = hcy - hp.hy * hScale * throb * persp * 0.92;
-        hp.depthScale = Math.max(0.5, persp);
-        hp.depthAlpha = Math.max(0.4, persp);
+      if (isHeartScene) {
+        // 精致平面爱心：无旋转，只做 lub-dub 心跳缩放
+        heartPulse = heartbeat(time);
+        var hbScale = Math.min(W, H) * 0.032 * (1 + heartPulse * 0.10);
+        for (var hi = 0; hi < morphParticles.length; hi++) {
+          var hp = morphParticles[hi];
+          if (!hp.threeD) continue;
+          hp.tx = W / 2 + hp.hx * hbScale;
+          hp.ty = H / 2 - hp.hy * hbScale * 0.92;
+          hp.depthScale = 1;
+          hp.depthAlpha = 1;
+        }
+      } else {
+        // 3D 玫瑰花束：旋转 + 透视
+        var rot = time * 0.0009 + heartRotation;
+        var cosR = Math.cos(rot), sinR = Math.sin(rot);
+        var hf = 12;
+        var hScale = Math.min(W, H) * 0.100;
+        var hcx = W / 2, hcy = H * 0.48;
+        var throb = 1 + Math.sin(time * 0.0012) * 0.02;
+        for (var rj = 0; rj < morphParticles.length; rj++) {
+          var rp = morphParticles[rj];
+          if (!rp.threeD) continue;
+          var x3 = rp.hx * cosR + rp.hz * sinR;
+          var z3 = -rp.hx * sinR + rp.hz * cosR;
+          var persp = hf / (hf - z3);
+          rp.tx = hcx + x3 * hScale * throb * persp;
+          rp.ty = hcy - rp.hy * hScale * throb * persp * 0.92;
+          rp.depthScale = Math.max(0.5, persp);
+          rp.depthAlpha = Math.max(0.4, persp);
+        }
       }
     }
 
