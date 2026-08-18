@@ -83,7 +83,7 @@
   <span class="en">给我的最爱</span>
 </div>
 
-<div id="hint">轻点屏幕 · 唤醒星光</div>
+<div id="hint">轻点绽放爱心 · 左右拖动旋转</div>
 
 <script>
 (function() {
@@ -103,6 +103,8 @@
   // 文字 / 爱心：玫瑰粉
   var TEXT_COLORS = ['#ffb0c0', '#ff9eb5', '#ffd7e0', '#e8829a', '#ffc4d0', '#ffffff'];
   var HEART_COLORS = ['#ffb0c0', '#ff9eb5', '#e8829a', '#ffc4d0', '#ffd7e0'];
+  var ROSE_COLORS = ['#ff4d6d', '#ff3355', '#e8113f', '#ff6b81', '#c9184a', '#ffb3c1'];
+  var LEAF_COLORS = ['#2d6a4f', '#40916c', '#52b788', '#1b4332', '#74c69d'];
 
   function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
 
@@ -121,6 +123,8 @@
       phase: Math.random() * Math.PI * 2,
       twinkle: Math.random() * 0.002 + 0.001,
       baseAlpha: Math.random() * 0.5 + 0.5,
+      threeD: false, hx: 0, hy: 0, hz: 0,
+      depthScale: 1, depthAlpha: 1,
     };
   }
 
@@ -170,6 +174,8 @@
   var starIntensity = 0, targetStarIntensity = 0.5;   // 双星常亮
   var bridgeIntensity = 0, targetBridgeIntensity = 0.3; // 鹊桥常流
   var wobbleAmp = 0.25;
+  var heartRotation = 0;   // 拖拽旋转角度
+  var heartPulse = 0;      // 心跳脉冲（爱心 + 光晕共用）
 
   // ---------- Text sampling ----------
   var textCache = {};
@@ -235,6 +241,7 @@
       var p = morphParticles[i];
       var t = milkywayTarget();
       p.tx = t.x; p.ty = t.y;
+      p.threeD = false; p.depthScale = 1; p.depthAlpha = 1;
       p.color = pick(MILKY_COLORS);
       p.baseAlpha = Math.random() * 0.5 + 0.5;
     }
@@ -251,6 +258,7 @@
       var p = morphParticles[i];
       p.tx = pt.x + (Math.random() - 0.5) * 1.2;
       p.ty = pt.y + (Math.random() - 0.5) * 1.2;
+      p.threeD = false; p.depthScale = 1; p.depthAlpha = 1;
       p.color = pick(TEXT_COLORS);
       p.baseAlpha = Math.random() * 0.4 + 0.6;
       p.size = Math.random() * 2.0 + 1.2;
@@ -266,13 +274,89 @@
     }
   }
 
+  // ---------- 3D heart (立体爱心) ----------
+  function heart3DPoint() {
+    var t = Math.random() * Math.PI * 2;
+    var hx = 16 * Math.pow(Math.sin(t), 3);
+    var hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+    var s = Math.random();                 // 内部填充
+    var depth = Math.sqrt(Math.max(0, 1 - s * s)); // 越靠边越薄，形成饱满立体感
+    var z = (Math.random() * 2 - 1) * depth * 3.2;
+    return { x: hx * s, y: hy * s, z: z };
+  }
+  function assignHeart3D() {
+    for (var i = 0; i < morphParticles.length; i++) {
+      var p = morphParticles[i];
+      var pt = heart3DPoint();
+      p.hx = pt.x; p.hy = pt.y; p.hz = pt.z;
+      p.threeD = true; p.depthScale = 1; p.depthAlpha = 1;
+      p.color = pick(HEART_COLORS);
+      p.baseAlpha = Math.random() * 0.5 + 0.5;
+    }
+  }
+
+  // ---------- 3D rose bouquet (立体玫瑰花束) ----------
+  function assignRose3D() {
+    var roseCount = isMobile ? 4 : 6;
+    var centers = [];
+    for (var j = 0; j < roseCount; j++) {
+      var ca = (j / roseCount) * Math.PI * 2 + 0.4;
+      var spread = 3.3;
+      centers.push({
+        x: Math.cos(ca) * spread * (0.8 + Math.random() * 0.5),
+        z: Math.sin(ca) * spread * 0.6 * (0.8 + Math.random() * 0.5),
+        y: (Math.random() - 0.5) * 1.5,
+      });
+    }
+    for (var i = 0; i < morphParticles.length; i++) {
+      var p = morphParticles[i];
+      var r = Math.random();
+      var x, y, z;
+      if (r < 0.66) {
+        // 花苞：螺旋花瓣
+        var c = centers[(Math.random() * centers.length) | 0];
+        var t = Math.random();
+        var phi = t * (4 + Math.random() * 3) * Math.PI * 2;
+        var rad = t * (2.6 + Math.random() * 0.9);
+        x = c.x + rad * Math.cos(phi) + (Math.random() - 0.5) * 0.25;
+        z = c.z + rad * Math.sin(phi) + (Math.random() - 0.5) * 0.25;
+        y = c.y + (1 - t) * 2.2 + (Math.random() - 0.5) * 0.3;
+        p.color = pick(ROSE_COLORS);
+        p.baseAlpha = Math.random() * 0.5 + 0.5;
+      } else if (r < 0.9) {
+        // 花茎：向下收束
+        var c2 = centers[(Math.random() * centers.length) | 0];
+        var tt = Math.random();
+        x = c2.x * (1 - tt) + (Math.random() - 0.5) * 0.4;
+        z = c2.z * (1 - tt) + (Math.random() - 0.5) * 0.4;
+        y = (c2.y - 1.2) + tt * (-6.8 - (c2.y - 1.2));
+        p.color = pick(LEAF_COLORS);
+        p.baseAlpha = Math.random() * 0.45 + 0.35;
+      } else {
+        // 包装纸：金色 V 形
+        var tt2 = Math.random();
+        var ang = Math.random() * Math.PI * 2;
+        var wrapR = (1 - tt2) * 3.5 + tt2 * 0.4;
+        x = Math.cos(ang) * wrapR;
+        z = Math.sin(ang) * wrapR;
+        y = -4.2 + tt2 * 3.0;
+        p.color = pick(BRIDGE_COLORS);
+        p.baseAlpha = Math.random() * 0.5 + 0.4;
+      }
+      p.hx = x; p.hy = y; p.hz = z;
+      p.threeD = true; p.depthScale = 1; p.depthAlpha = 1;
+    }
+  }
+
   // ---------- Scenes ----------
   var scenes = [
     { type: 'milkyway', dur: 3000 },
-    { type: 'text', text: '戴雪静',   dur: 5200 },
-    { type: 'text', text: '我爱你',   dur: 5200 },
-    { type: 'text', text: '七夕快乐', dur: 5200 },
+    { type: 'text', text: '戴雪静',   dur: 5000 },
+    { type: 'text', text: '我爱你',   dur: 5000 },
+    { type: 'text', text: '七夕快乐', dur: 5000 },
+    { type: 'text', text: '爱你永远', dur: 5000 },
     { type: 'heart',    dur: 6000 },
+    { type: 'rose',     dur: 7000 },
   ];
   var sceneIdx = 0;
   var sceneTimer = null;
@@ -282,8 +366,11 @@
       assignText(scene.text);
       wobbleAmp = 0.04;   // 文字状态几乎不晃动，保证清晰
     } else if (scene.type === 'heart') {
-      assignHeart();
-      wobbleAmp = 0.08;
+      assignHeart3D();
+      wobbleAmp = 0.03;
+    } else if (scene.type === 'rose') {
+      assignRose3D();
+      wobbleAmp = 0.03;
     } else {
       assignMilkyway();
       wobbleAmp = 0.25;
@@ -295,6 +382,9 @@
     for (var i = 0; i < morphParticles.length; i++) {
       morphParticles[i].tx = Math.random() * W;
       morphParticles[i].ty = Math.random() * H;
+      morphParticles[i].threeD = false;
+      morphParticles[i].depthScale = 1;
+      morphParticles[i].depthAlpha = 1;
     }
     setTimeout(function() { applyScene(scene); }, 700);
   }
@@ -327,18 +417,62 @@
       });
     }
   }
-  function onPointer(e) {
-    var x, y;
-    if (e.touches) {
-      x = e.touches[0].clientX; y = e.touches[0].clientY;
-    } else {
-      x = e.clientX; y = e.clientY;
+  // ---------- Floating hearts (tap) ----------
+  var floatHearts = [];
+  function spawnHearts(x, y) {
+    var n = isMobile ? 4 : 7;
+    for (var i = 0; i < n; i++) {
+      floatHearts.push({
+        x: x + (Math.random() - 0.5) * 34,
+        y: y + (Math.random() - 0.5) * 22,
+        vy: -(Math.random() * 1.3 + 0.55),
+        vx: (Math.random() - 0.5) * 0.9,
+        size: Math.random() * 9 + 6,
+        rot: (Math.random() - 0.5) * 0.7,
+        rotSpeed: (Math.random() - 0.5) * 0.03,
+        life: 1,
+        decay: Math.random() * 0.007 + 0.004,
+        color: pick(HEART_COLORS),
+      });
     }
-    spawnSpark(x, y);
-    hintEl.style.opacity = '0';
   }
-  canvas.addEventListener('click', onPointer);
-  canvas.addEventListener('touchstart', onPointer, { passive: true });
+
+  // ---------- Interaction (tap = love burst, drag = spin) ----------
+  var dragStartX = 0, dragging = false, moved = false, lastDragX = 0;
+  function getXY(e) {
+    if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+  function onDown(e) {
+    var p = getXY(e);
+    dragStartX = p.x; lastDragX = p.x;
+    dragging = true; moved = false;
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    var p = getXY(e);
+    var dx = p.x - lastDragX;
+    lastDragX = p.x;
+    if (Math.abs(p.x - dragStartX) > 12) moved = true;
+    if (moved && (scenes[sceneIdx].type === 'heart' || scenes[sceneIdx].type === 'rose')) {
+      heartRotation += dx * 0.012;
+    }
+  }
+  function onUp(e) {
+    if (!dragging) return;
+    dragging = false;
+    if (!moved) {
+      var p = getXY(e);
+      spawnSpark(p.x, p.y);
+      spawnHearts(p.x, p.y);
+      spawnFirework(p.x, p.y);
+      hintEl.style.opacity = '0';
+    }
+  }
+  canvas.addEventListener('pointerdown', onDown, { passive: true });
+  canvas.addEventListener('pointermove', onMove, { passive: true });
+  canvas.addEventListener('pointerup', onUp);
+  canvas.addEventListener('pointercancel', onUp);
 
   // ---------- Rose petals (falling) ----------
   var PETAL_COLORS = ['#ffb0c0', '#ff9eb5', '#e8829a', '#ffc4d0', '#ffd7e0', '#f7a8b8'];
@@ -414,9 +548,9 @@
 
   // ---------- Fireworks ----------
   var fireworks = [];
-  function spawnFirework() {
-    var x = W * (0.18 + Math.random() * 0.64);
-    var y = H * (0.14 + Math.random() * 0.3);
+  function spawnFirework(x, y) {
+    if (x == null) x = W * (0.18 + Math.random() * 0.64);
+    if (y == null) y = H * (0.14 + Math.random() * 0.3);
     var count = isMobile ? 42 : 74;
     var hue = pick([340, 352, 300, 262, 205]);
     var parts = [];
@@ -457,6 +591,31 @@
     starIntensity += (targetStarIntensity - starIntensity) * 0.03;
     bridgeIntensity += (targetBridgeIntensity - bridgeIntensity) * 0.03;
 
+    // --- 3D projection (heart / rose rotate + perspective) ---
+    var isHeartScene = scenes[sceneIdx].type === 'heart';
+    var isRoseScene = scenes[sceneIdx].type === 'rose';
+    if (isHeartScene || isRoseScene) {
+      var rot = time * 0.0006 + heartRotation;
+      var cosR = Math.cos(rot), sinR = Math.sin(rot);
+      var hf = 12;                              // 透视焦距
+      var hScale = isHeartScene ? Math.min(W, H) * 0.020 : Math.min(W, H) * 0.075;
+      var hcx = W / 2;
+      var hcy = isHeartScene ? H / 2 : H * 0.48;
+      heartPulse = isHeartScene ? Math.pow(0.5 + 0.5 * Math.sin(time * 0.006), 4) : 0;
+      var throb = isHeartScene ? (1 + heartPulse * 0.07) : (1 + Math.sin(time * 0.0012) * 0.02);
+      for (var hi = 0; hi < morphParticles.length; hi++) {
+        var hp = morphParticles[hi];
+        if (!hp.threeD) continue;
+        var x3 = hp.hx * cosR + hp.hz * sinR;
+        var z3 = -hp.hx * sinR + hp.hz * cosR;
+        var persp = hf / (hf - z3);
+        hp.tx = hcx + x3 * hScale * throb * persp;
+        hp.ty = hcy - hp.hy * hScale * throb * persp * 0.92;
+        hp.depthScale = Math.max(0.5, persp);
+        hp.depthAlpha = Math.max(0.4, persp);
+      }
+    }
+
     // --- morph particles ---
     for (var i = 0; i < morphParticles.length; i++) {
       var p = morphParticles[i];
@@ -467,11 +626,11 @@
       p.x += Math.sin(time * 0.001 + p.phase) * wobbleAmp;
       p.y += Math.cos(time * 0.0011 + p.phase) * wobbleAmp;
       // twinkle
-      var a = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * p.twinkle + p.phase));
+      var a = p.baseAlpha * p.depthAlpha * (0.55 + 0.45 * Math.sin(time * p.twinkle + p.phase));
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.size * p.depthScale, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
@@ -500,11 +659,9 @@
 
     // --- heartbeat glow (pulses during the heart scene) ---
     if (scenes[sceneIdx].type === 'heart') {
-      var beat = 0.5 + 0.5 * Math.sin(time * 0.006);
-      var pulse = Math.pow(beat, 4);
       var hr = Math.min(W, H) * 0.5;
       var hg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, hr);
-      hg.addColorStop(0, 'rgba(255,120,165,' + (0.18 * pulse + 0.03) + ')');
+      hg.addColorStop(0, 'rgba(255,120,165,' + (0.18 * heartPulse + 0.03) + ')');
       hg.addColorStop(1, 'rgba(255,120,165,0)');
       ctx.fillStyle = hg;
       ctx.fillRect(W/2 - hr, H/2 - hr, hr * 2, hr * 2);
@@ -592,6 +749,30 @@
       ctx.fillStyle = petal.color;
       ctx.beginPath();
       ctx.ellipse(0, 0, petal.size, petal.size * 0.58, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // --- floating hearts (tap) ---
+    for (var fh = floatHearts.length - 1; fh >= 0; fh--) {
+      var fheart = floatHearts[fh];
+      fheart.x += fheart.vx;
+      fheart.y += fheart.vy;
+      fheart.vy += 0.008;
+      fheart.vx *= 0.995;
+      fheart.rot += fheart.rotSpeed;
+      fheart.life -= fheart.decay;
+      if (fheart.life <= 0 || fheart.y < -60) { floatHearts.splice(fh, 1); continue; }
+      ctx.save();
+      ctx.translate(fheart.x, fheart.y);
+      ctx.rotate(fheart.rot);
+      ctx.globalAlpha = fheart.life;
+      ctx.fillStyle = fheart.color;
+      var s = fheart.size;
+      ctx.beginPath();
+      ctx.moveTo(0, s * 0.9);
+      ctx.bezierCurveTo(-s * 1.2, s * 0.1, -s * 0.9, -s * 0.9, 0, -s * 0.3);
+      ctx.bezierCurveTo(s * 0.9, -s * 0.9, s * 1.2, s * 0.1, 0, s * 0.9);
       ctx.fill();
       ctx.restore();
     }
