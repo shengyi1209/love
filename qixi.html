@@ -103,6 +103,7 @@
   // 文字 / 爱心：玫瑰粉
   var TEXT_COLORS = ['#ffb0c0', '#ff9eb5', '#ffd7e0', '#e8829a', '#ffc4d0', '#ffffff'];
   var HEART_COLORS = ['#ffb0c0', '#ff9eb5', '#e8829a', '#ffc4d0', '#ffd7e0'];
+  var NAME_COLORS = ['#ffffff', '#fff2f0', '#ffe6c8', '#ffd9a8', '#fff5e0'];
   var ROSE_COLORS = ['#ff4d6d', '#ff3355', '#e8113f', '#ff6b81', '#c9184a', '#ffb3c1'];
   var LEAF_COLORS = ['#2d6a4f', '#40916c', '#52b788', '#1b4332', '#74c69d'];
 
@@ -284,14 +285,39 @@
     var z = (Math.random() * 2 - 1) * depth * 3.2;
     return { x: hx * s, y: hy * s, z: z };
   }
+  // 名字映射到爱心内部（立体）
+  function mapNamePoints(text) {
+    var sampled = sampleText(text);
+    if (!sampled.pts.length) return [{ x: 0, y: 0 }];
+    var targetW = 18;                      // 名字宽度（heart units）
+    var targetH = targetW / sampled.aspect;
+    var ox = -targetW / 2;
+    var oyTop = 1.8 + targetH / 2;         // 垂直居中于爱心上部
+    return sampled.pts.map(function(pt) {
+      return { x: ox + pt.nx * targetW, y: oyTop - pt.ny * targetH };
+    });
+  }
   function assignHeart3D() {
+    var namePts = mapNamePoints('戴雪静');
+    var nameCount = Math.floor(morphParticles.length * 0.22);
     for (var i = 0; i < morphParticles.length; i++) {
       var p = morphParticles[i];
-      var pt = heart3DPoint();
-      p.hx = pt.x; p.hy = pt.y; p.hz = pt.z;
+      if (i < nameCount) {
+        // 立体名字：在爱心前部，更亮更大
+        var np = namePts[(Math.random() * namePts.length) | 0];
+        p.hx = np.x + (Math.random() - 0.5) * 0.3;
+        p.hy = np.y + (Math.random() - 0.5) * 0.3;
+        p.hz = 1.2 + (Math.random() * 2 - 1) * 0.6;
+        p.color = pick(NAME_COLORS);
+        p.baseAlpha = 0.8 + Math.random() * 0.2;
+        p.size = Math.random() * 2.0 + 1.5;
+      } else {
+        var pt = heart3DPoint();
+        p.hx = pt.x; p.hy = pt.y; p.hz = pt.z;
+        p.color = pick(HEART_COLORS);
+        p.baseAlpha = Math.random() * 0.5 + 0.5;
+      }
       p.threeD = true; p.depthScale = 1; p.depthAlpha = 1;
-      p.color = pick(HEART_COLORS);
-      p.baseAlpha = Math.random() * 0.5 + 0.5;
     }
   }
 
@@ -355,8 +381,8 @@
     { type: 'text', text: '我爱你',   dur: 5000 },
     { type: 'text', text: '七夕快乐', dur: 5000 },
     { type: 'text', text: '爱你永远', dur: 5000 },
-    { type: 'heart',    dur: 6000 },
-    { type: 'rose',     dur: 7000 },
+    { type: 'heart',    dur: 8000 },
+    { type: 'rose',     dur: 9000 },
   ];
   var sceneIdx = 0;
   var sceneTimer = null;
@@ -595,7 +621,7 @@
     var isHeartScene = scenes[sceneIdx].type === 'heart';
     var isRoseScene = scenes[sceneIdx].type === 'rose';
     if (isHeartScene || isRoseScene) {
-      var rot = time * 0.0006 + heartRotation;
+      var rot = time * 0.0009 + heartRotation;
       var cosR = Math.cos(rot), sinR = Math.sin(rot);
       var hf = 12;                              // 透视焦距
       var hScale = isHeartScene ? Math.min(W, H) * 0.030 : Math.min(W, H) * 0.100;
