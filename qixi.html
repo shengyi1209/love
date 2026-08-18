@@ -291,100 +291,27 @@
     }
   }
 
-  // ---------- 精致平面爱心（轮廓 + 填充 + 名字） ----------
-  function heart2DPoint() {
-    var t = Math.random() * Math.PI * 2;
-    var hx = 16 * Math.pow(Math.sin(t), 3);
-    var hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-    var s = Math.random() < 0.55 ? 1 : Math.random(); // 55% 落在轮廓（清晰），其余填充内部
-    return { x: hx * s, y: hy * s };
-  }
-  // 名字映射到爱心内部（2D，始终正面可读）
-  function mapNamePoints(text) {
-    var sampled = sampleText(text);
-    if (!sampled.pts.length) return [{ x: 0, y: 0 }];
-    var targetW = 17;
-    var targetH = targetW / sampled.aspect;
-    var ox = -targetW / 2;
-    var oyTop = 1.8 + targetH / 2;         // 垂直居中于爱心上部
-    return sampled.pts.map(function(pt) {
-      return { x: ox + pt.nx * targetW, y: oyTop - pt.ny * targetH };
-    });
-  }
+  // ---------- 爱心场景：粒子退为柔和背景光晕（矢量爱心为主） ----------
   function assignHeart3D() {
-    var namePts = mapNamePoints('戴雪静');
-    var nameCount = Math.floor(morphParticles.length * 0.24);
     for (var i = 0; i < morphParticles.length; i++) {
       var p = morphParticles[i];
-      if (i < nameCount) {
-        // 名字：亮白/金色，更大更亮，始终正面
-        var np = namePts[(Math.random() * namePts.length) | 0];
-        p.hx = np.x + (Math.random() - 0.5) * 0.3;
-        p.hy = np.y + (Math.random() - 0.5) * 0.3;
-        p.color = pick(NAME_COLORS);
-        p.baseAlpha = 0.8 + Math.random() * 0.2;
-        p.size = Math.random() * 2.0 + 1.5;
-      } else {
-        var pt = heart2DPoint();
-        p.hx = pt.x; p.hy = pt.y;
-        p.color = pick(HEART_COLORS);
-        p.baseAlpha = Math.random() * 0.5 + 0.5;
-      }
-      p.threeD = true; p.depthScale = 1; p.depthAlpha = 1;
+      var t = milkywayTarget();
+      p.tx = t.x; p.ty = t.y;
+      p.threeD = false; p.depthScale = 1; p.depthAlpha = 1;
+      p.color = pick(HEART_COLORS);
+      p.baseAlpha = Math.random() * 0.3 + 0.2;
     }
   }
 
-  // ---------- 3D rose bouquet (立体玫瑰花束) ----------
+  // ---------- 花束场景：粒子退为柔和背景光晕（矢量花束为主） ----------
   function assignRose3D() {
-    var roseCount = isMobile ? 4 : 6;
-    var centers = [];
-    for (var j = 0; j < roseCount; j++) {
-      var ca = (j / roseCount) * Math.PI * 2 + 0.4;
-      var spread = 3.3;
-      centers.push({
-        x: Math.cos(ca) * spread * (0.8 + Math.random() * 0.5),
-        z: Math.sin(ca) * spread * 0.6 * (0.8 + Math.random() * 0.5),
-        y: (Math.random() - 0.5) * 1.5,
-      });
-    }
     for (var i = 0; i < morphParticles.length; i++) {
       var p = morphParticles[i];
-      var r = Math.random();
-      var x, y, z;
-      if (r < 0.66) {
-        // 精致花苞：多层螺旋 + 花心→边缘渐变 + 花瓣起伏
-        var c = centers[(Math.random() * centers.length) | 0];
-        var t = Math.pow(Math.random(), 1.4);   // 偏向花心，中心更密
-        var phi = t * (4.5 + Math.random() * 2.5) * Math.PI * 2;
-        var petal = 1 + 0.15 * Math.sin(phi * 2);
-        var rad = t * 2.8 * petal;
-        x = c.x + rad * Math.cos(phi) + (Math.random() - 0.5) * 0.18;
-        z = c.z + rad * Math.sin(phi) + (Math.random() - 0.5) * 0.18;
-        y = c.y + (1 - t) * 2.3 + (Math.random() - 0.5) * 0.22;
-        p.color = roseColor(t);
-        p.baseAlpha = 0.5 + 0.4 * (1 - t) + Math.random() * 0.15;
-      } else if (r < 0.9) {
-        // 花茎：向下收束
-        var c2 = centers[(Math.random() * centers.length) | 0];
-        var tt = Math.random();
-        x = c2.x * (1 - tt) + (Math.random() - 0.5) * 0.4;
-        z = c2.z * (1 - tt) + (Math.random() - 0.5) * 0.4;
-        y = (c2.y - 1.2) + tt * (-6.8 - (c2.y - 1.2));
-        p.color = pick(LEAF_COLORS);
-        p.baseAlpha = Math.random() * 0.45 + 0.35;
-      } else {
-        // 包装纸：金色 V 形
-        var tt2 = Math.random();
-        var ang = Math.random() * Math.PI * 2;
-        var wrapR = (1 - tt2) * 3.5 + tt2 * 0.4;
-        x = Math.cos(ang) * wrapR;
-        z = Math.sin(ang) * wrapR;
-        y = -4.2 + tt2 * 3.0;
-        p.color = pick(BRIDGE_COLORS);
-        p.baseAlpha = Math.random() * 0.5 + 0.4;
-      }
-      p.hx = x; p.hy = y; p.hz = z;
-      p.threeD = true; p.depthScale = 1; p.depthAlpha = 1;
+      var t = milkywayTarget();
+      p.tx = t.x; p.ty = t.y;
+      p.threeD = false; p.depthScale = 1; p.depthAlpha = 1;
+      p.color = Math.random() < 0.6 ? pick(ROSE_COLORS) : pick(BRIDGE_COLORS);
+      p.baseAlpha = Math.random() * 0.3 + 0.2;
     }
   }
 
@@ -609,6 +536,186 @@
     fireworks.push({ parts: parts });
   }
 
+  // ---------- Vector heart & rose (精致矢量绘制) ----------
+  var sceneAlpha = 0;
+  var targetSceneAlpha = 0;
+
+  function heartPath(ctx, size) {
+    ctx.beginPath();
+    var N = 160;
+    for (var i = 0; i <= N; i++) {
+      var t = (i / N) * Math.PI * 2;
+      var hx = 16 * Math.pow(Math.sin(t), 3);
+      var hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+      var px = hx * size;
+      var py = -hy * size * 0.92;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  function drawVectorHeart(time, alpha) {
+    var beat = heartbeat(time);
+    var size = Math.min(W, H) * 0.021 * (1 + beat * 0.08);
+    var cx = W / 2, cy = H / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.globalAlpha = alpha;
+
+    // 背景柔光
+    var gr = Math.min(W, H) * 0.52;
+    var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
+    glow.addColorStop(0, 'rgba(255,90,140,' + (0.16 + 0.14 * beat) + ')');
+    glow.addColorStop(1, 'rgba(255,90,140,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(-gr, -gr, gr * 2, gr * 2);
+
+    // 心形主体（渐变填充）
+    heartPath(ctx, size);
+    var g = ctx.createLinearGradient(0, -size * 16, 0, size * 16);
+    g.addColorStop(0, '#ff9ec0');
+    g.addColorStop(0.5, '#ff5c8a');
+    g.addColorStop(1, '#d6336c');
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // 发光描边
+    ctx.shadowColor = 'rgba(255,70,130,0.95)';
+    ctx.shadowBlur = 26;
+    ctx.strokeStyle = '#ffe0ec';
+    ctx.lineWidth = Math.max(1.5, size * 0.06);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // 左上高光
+    ctx.save();
+    heartPath(ctx, size);
+    ctx.clip();
+    var hl = ctx.createRadialGradient(-size * 5, -size * 6, 0, -size * 5, -size * 6, size * 12);
+    hl.addColorStop(0, 'rgba(255,255,255,0.30)');
+    hl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hl;
+    ctx.fillRect(-size * 20, -size * 20, size * 40, size * 40);
+    ctx.restore();
+
+    ctx.restore();
+
+    // 名字（在爱心中央）
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var fs = Math.min(W, H) * 0.11;
+    ctx.font = '700 ' + fs + 'px "Noto Serif SC","Microsoft YaHei",serif';
+    ctx.shadowColor = 'rgba(255,220,170,0.95)';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = '#fff7ea';
+    ctx.fillText('戴雪静', cx, cy - size * 1.5);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawRosePetal(cx, cy, ang, dist, len, wid, color) {
+    ctx.save();
+    ctx.translate(cx + Math.cos(ang) * dist, cy + Math.sin(ang) * dist);
+    ctx.rotate(ang + Math.PI / 2);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, wid, len, 0, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function rosePetalColor(frac) {
+    var light = 30 + 34 * frac;
+    return 'hsl(345, 82%, ' + light + '%)';
+  }
+
+  function drawRose(x, y, r, seed) {
+    var layers = 5;
+    for (var L = 0; L < layers; L++) {
+      var frac = L / layers;
+      var rr = r * (1 - frac * 0.8);
+      var petals = Math.max(5, Math.round(9 - frac * 4));
+      var rot = frac * 1.5 + seed;
+      for (var p = 0; p < petals; p++) {
+        var ang = (p / petals) * Math.PI * 2 + rot;
+        drawRosePetal(x, y, ang, rr * 0.5, rr * 0.8, rr * 0.4, rosePetalColor(frac));
+      }
+    }
+    ctx.beginPath();
+    ctx.fillStyle = 'hsl(345, 90%, 20%)';
+    ctx.arc(x, y, r * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawRoseBouquet(time, alpha) {
+    var cx = W / 2, cy = H * 0.52;
+    var s = Math.min(W, H) * 0.20;
+    var sway = Math.sin(time * 0.0008) * 0.035;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx, cy);
+    ctx.rotate(sway + heartRotation);
+
+    // 花茎
+    var stems = isMobile ? 5 : 7;
+    for (var i = 0; i < stems; i++) {
+      var a = (i / stems) * Math.PI * 2 + 0.4;
+      var sx = Math.cos(a) * s * 0.6;
+      var sy = Math.sin(a) * s * 0.2 - s * 0.5;
+      ctx.strokeStyle = 'rgba(46,120,72,0.85)';
+      ctx.lineWidth = s * 0.05;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(sx * 0.5, s * 1.5, 0, s * 2.4);
+      ctx.stroke();
+    }
+
+    // 叶子
+    ctx.fillStyle = 'rgba(60,140,90,0.9)';
+    for (var li = 0; li < 4; li++) {
+      var la = (li / 4) * Math.PI * 2 + 1.2;
+      var lx = Math.cos(la) * s * 0.5;
+      var ly = Math.sin(la) * s * 0.2 + s * 0.8;
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(la);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s * 0.16, s * 0.34, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 玫瑰（顶部聚成一束）
+    var roses = isMobile ? 4 : 6;
+    for (var j = 0; j < roses; j++) {
+      var ra = (j / roses) * Math.PI * 2 + 0.5;
+      var rx = Math.cos(ra) * s * 0.68;
+      var ry = Math.sin(ra) * s * 0.32 - s * 0.1;
+      drawRose(rx, ry, s * 0.6, j * 0.7);
+    }
+    drawRose(0, -s * 0.42, s * 0.82, 2.1);
+
+    // 包装纸（底部 V 形）
+    ctx.fillStyle = 'rgba(214,160,100,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(0, s * 2.4);
+    ctx.lineTo(-s * 0.9, s * 0.2);
+    ctx.lineTo(s * 0.9, s * 0.2);
+    ctx.closePath();
+    ctx.fill();
+
+    // 蝴蝶结（金色）
+    ctx.fillStyle = 'rgba(255,190,110,0.95)';
+    ctx.beginPath();
+    ctx.arc(-s * 0.18, s * 0.2, s * 0.12, 0, Math.PI * 2);
+    ctx.arc(s * 0.18, s * 0.2, s * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   // ---------- Animation loop ----------
   var lastTime = performance.now();
   function loop(now) {
@@ -631,43 +738,10 @@
     starIntensity += (targetStarIntensity - starIntensity) * 0.03;
     bridgeIntensity += (targetBridgeIntensity - bridgeIntensity) * 0.03;
 
-    // --- heart (2D beat) / rose (3D rotate) projection ---
+    // --- current scene flags + heartbeat ---
     var isHeartScene = scenes[sceneIdx].type === 'heart';
     var isRoseScene = scenes[sceneIdx].type === 'rose';
-    if (isHeartScene || isRoseScene) {
-      if (isHeartScene) {
-        // 精致平面爱心：无旋转，只做 lub-dub 心跳缩放
-        heartPulse = heartbeat(time);
-        var hbScale = Math.min(W, H) * 0.032 * (1 + heartPulse * 0.10);
-        for (var hi = 0; hi < morphParticles.length; hi++) {
-          var hp = morphParticles[hi];
-          if (!hp.threeD) continue;
-          hp.tx = W / 2 + hp.hx * hbScale;
-          hp.ty = H / 2 - hp.hy * hbScale * 0.92;
-          hp.depthScale = 1;
-          hp.depthAlpha = 1;
-        }
-      } else {
-        // 3D 玫瑰花束：旋转 + 透视
-        var rot = time * 0.0009 + heartRotation;
-        var cosR = Math.cos(rot), sinR = Math.sin(rot);
-        var hf = 12;
-        var hScale = Math.min(W, H) * 0.100;
-        var hcx = W / 2, hcy = H * 0.48;
-        var throb = 1 + Math.sin(time * 0.0012) * 0.02;
-        for (var rj = 0; rj < morphParticles.length; rj++) {
-          var rp = morphParticles[rj];
-          if (!rp.threeD) continue;
-          var x3 = rp.hx * cosR + rp.hz * sinR;
-          var z3 = -rp.hx * sinR + rp.hz * cosR;
-          var persp = hf / (hf - z3);
-          rp.tx = hcx + x3 * hScale * throb * persp;
-          rp.ty = hcy - rp.hy * hScale * throb * persp * 0.92;
-          rp.depthScale = Math.max(0.5, persp);
-          rp.depthAlpha = Math.max(0.4, persp);
-        }
-      }
-    }
+    if (isHeartScene) heartPulse = heartbeat(time);
 
     // --- morph particles ---
     for (var i = 0; i < morphParticles.length; i++) {
@@ -830,6 +904,14 @@
       ctx.restore();
     }
     ctx.globalAlpha = 1;
+
+    // --- scene vector overlay (heart / rose) ---
+    if (isHeartScene || isRoseScene) targetSceneAlpha = 1; else targetSceneAlpha = 0;
+    sceneAlpha += (targetSceneAlpha - sceneAlpha) * 0.05;
+    if (sceneAlpha > 0.01) {
+      if (isHeartScene) drawVectorHeart(time, sceneAlpha);
+      else if (isRoseScene) drawRoseBouquet(time, sceneAlpha);
+    }
 
     requestAnimationFrame(loop);
   }
