@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>七夕 · 鹊桥相会</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Dancing+Script:wght@600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #050510;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    position: relative;
+    font-family: 'Noto Serif SC', serif;
+    background:
+      radial-gradient(120% 80% at 50% 0%, #1a1638 0%, #0e0c24 45%, #050510 100%);
+  }
+
+  #sky {
+    position: absolute; inset: 0;
+    display: block;
+  }
+
+  /* Caption overlay (story narration) */
+  #caption {
+    position: absolute;
+    left: 50%; top: 14%;
+    transform: translateX(-50%);
+    color: #e8e0ff;
+    font-size: clamp(15px, 3.4vw, 22px);
+    letter-spacing: 6px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+    text-shadow: 0 0 24px rgba(200,180,255,0.5);
+    white-space: nowrap;
+  }
+  #caption.show { opacity: 0.92; }
+
+  /* Big title (appears at the very start) */
+  #title {
+    position: absolute;
+    left: 50%; top: 34%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.4s ease, transform 1.4s ease;
+  }
+  #title.show { opacity: 1; }
+  #title .cn {
+    font-size: clamp(28px, 7vw, 46px);
+    color: #ffe0ec;
+    letter-spacing: 10px;
+    font-weight: 600;
+    text-shadow: 0 0 30px rgba(255,180,210,0.6);
+    display: block;
+    margin-bottom: 10px;
+  }
+  #title .en {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(18px, 4vw, 28px);
+    color: #c9b8ff;
+    letter-spacing: 2px;
+    opacity: 0.8;
+    display: block;
+  }
+
+  /* Bottom hint */
+  #hint {
+    position: absolute;
+    left: 50%; bottom: 30px;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.35);
+    font-size: 12px;
+    letter-spacing: 3px;
+    pointer-events: none;
+    transition: opacity 1s ease;
+    text-align: center;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+
+<div id="title">
+  <span class="cn">七 夕</span>
+  <span class="en">Qixi · Magpie Bridge</span>
+</div>
+
+<div id="caption"></div>
+<div id="hint">轻点屏幕 · 唤醒星光</div>
+
+<script>
+(function() {
+  var canvas = document.getElementById('sky');
+  var ctx = canvas.getContext('2d');
+  var captionEl = document.getElementById('caption');
+  var titleEl = document.getElementById('title');
+  var hintEl = document.getElementById('hint');
+
+  var W = 0, H = 0, DPR = 1;
+  var isMobile = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+  // ---------- Palette ----------
+  // 银河：冷色（白 / 淡蓝 / 淡紫）
+  var MILKY_COLORS = ['#ffffff', '#cfe0ff', '#d8c8ff', '#e8d8ff', '#a8c8ff', '#f0e8ff'];
+  // 鹊桥：暖金（喜鹊 / 灯光）
+  var BRIDGE_COLORS = ['#ffc98a', '#ffd7a8', '#ffe8c8', '#ffb877', '#ffdcb0'];
+  // 文字 / 爱心：玫瑰粉
+  var TEXT_COLORS = ['#ffb0c0', '#ff9eb5', '#ffd7e0', '#e8829a', '#ffc4d0', '#ffffff'];
+  var HEART_COLORS = ['#ffb0c0', '#ff9eb5', '#e8829a', '#ffc4d0', '#ffd7e0'];
+
+  function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+  // ---------- Particle set ----------
+  var MORPH_COUNT = isMobile ? 950 : 1900;
+  var BRIDGE_COUNT = 170;
+  var morphParticles = [];
+  var bridgeParticles = [];
+
+  function makeMorphParticle() {
+    return {
+      x: Math.random() * W, y: Math.random() * H,
+      tx: Math.random() * W, ty: Math.random() * H,
+      size: Math.random() * 1.7 + 0.7,
+      color: pick(MILKY_COLORS),
+      phase: Math.random() * Math.PI * 2,
+      twinkle: Math.random() * 0.002 + 0.001,
+      baseAlpha: Math.random() * 0.5 + 0.5,
+    };
+  }
+
+  // ---------- Resize ----------
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    updateStarPositions();
+  }
+
+  // ---------- Two stars (牛郎 · 织女) ----------
+  var star1 = { x: 0, y: 0, intensity: 0 }; // 织女（左）
+  var star2 = { x: 0, y: 0, intensity: 0 }; // 牛郎（右）
+  function updateStarPositions() {
+    star1.x = W * 0.28;
+    star1.y = H * 0.40;
+    star2.x = W * 0.72;
+    star2.y = H * 0.60;
+  }
+  // 鹊桥（二次贝塞尔曲线）
+  function bridgePoint(t) {
+    var cx = (star1.x + star2.x) / 2;
+    var cy = Math.min(star1.y, star2.y) - H * 0.34; // 拱形控制点
+    var x = (1-t)*(1-t)*star1.x + 2*(1-t)*t*cx + t*t*star2.x;
+    var y = (1-t)*(1-t)*star1.y + 2*(1-t)*t*cy + t*t*star2.y;
+    return { x: x, y: y };
+  }
+  function makeBridgeParticle() {
+    var p = {
+      t: Math.random(),
+      speed: 0.0015 + Math.random() * 0.0028,
+      size: Math.random() * 1.6 + 1.0,
+      color: pick(BRIDGE_COLORS),
+    };
+    var bp = bridgePoint(p.t);
+    p.x = bp.x; p.y = bp.y;
+    return p;
+  }
+
+  // ---------- Intensity (smoothed) ----------
+  var starIntensity = 0, targetStarIntensity = 0.4;
+  var bridgeIntensity = 0, targetBridgeIntensity = 0;
+
+  // ---------- Text sampling ----------
+  var textCache = {};
+  function sampleText(text) {
+    if (textCache[text]) return textCache[text];
+    var fontSize = 200;
+    var c = document.createElement('canvas');
+    var tctx = c.getContext('2d');
+    var font = '700 ' + fontSize + 'px "Noto Serif SC","Microsoft YaHei",sans-serif';
+    tctx.font = font;
+    var tw = Math.ceil(tctx.measureText(text).width);
+    c.width = Math.max(tw, 10);
+    c.height = Math.ceil(fontSize * 1.6);
+    tctx.font = font;
+    tctx.fillStyle = '#fff';
+    tctx.textAlign = 'left';
+    tctx.textBaseline = 'top';
+    tctx.fillText(text, 0, fontSize * 0.12);
+    var data = tctx.getImageData(0, 0, c.width, c.height).data;
+    var pts = [];
+    var gap = isMobile ? 5 : 4;
+    for (var y = 0; y < c.height; y += gap) {
+      for (var x = 0; x < c.width; x += gap) {
+        if (data[(y * c.width + x) * 4 + 3] > 128) {
+          pts.push({ nx: x / c.width, ny: y / c.height });
+        }
+      }
+    }
+    textCache[text] = { pts: pts, aspect: c.width / c.height };
+    return textCache[text];
+  }
+
+  function mapTextPoints(sampled) {
+    var targetW = W * 0.82;
+    var targetH = targetW / sampled.aspect;
+    var ox = (W - targetW) / 2;
+    var oy = (H - targetH) / 2;
+    return sampled.pts.map(function(p) {
+      return { x: ox + p.nx * targetW, y: oy + p.ny * targetH };
+    });
+  }
+
+  // ---------- Shape target generators ----------
+  function milkywayTarget() {
+    var t = Math.random();
+    var cx = t * W;
+    var cy = H * 0.5 + (t - 0.5) * H * 0.34;
+    var spread = H * 0.16;
+    var offset = (Math.random() + Math.random() - 1) * spread;
+    return { x: cx + (Math.random() - 0.5) * W * 0.08, y: cy + offset };
+  }
+  function heartTarget() {
+    var t = Math.random() * Math.PI * 2;
+    var x = 16 * Math.pow(Math.sin(t), 3);
+    var y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+    var scale = Math.min(W, H) * 0.020;
+    return { x: W/2 + x * scale, y: H/2 - y * scale * 0.92 };
+  }
+
+  // ---------- Scene application ----------
+  function assignMilkyway() {
+    for (var i = 0; i < morphParticles.length; i++) {
+      var p = morphParticles[i];
+      var t = milkywayTarget();
+      p.tx = t.x; p.ty = t.y;
+      p.color = pick(MILKY_COLORS);
+      p.baseAlpha = Math.random() * 0.5 + 0.5;
+    }
+  }
+  function assignText(text) {
+    var mapped = mapTextPoints(sampleText(text));
+    if (!mapped.length) { assignMilkyway(); return; }
+    for (var i = 0; i < morphParticles.length; i++) {
+      var p = morphParticles[i];
+      var m = mapped[i % mapped.length];
+      p.tx = m.x + (Math.random() - 0.5) * 2.5;
+      p.ty = m.y + (Math.random() - 0.5) * 2.5;
+      p.color = pick(TEXT_COLORS);
+      p.baseAlpha = Math.random() * 0.45 + 0.55;
+    }
+  }
+  function assignHeart() {
+    for (var i = 0; i < morphParticles.length; i++) {
+      var p = morphParticles[i];
+      var t = heartTarget();
+      p.tx = t.x; p.ty = t.y;
+      p.color = pick(HEART_COLORS);
+      p.baseAlpha = Math.random() * 0.5 + 0.5;
+    }
+  }
+
+  // ---------- Scenes ----------
+  var scenes = [
+    { type: 'milkyway', caption: '天河相隔 · 一年一遇',      dur: 5400 },
+    { type: 'stars',    caption: '牛郎 · 织女',              dur: 4300 },
+    { type: 'bridge',   caption: '喜鹊搭桥 · 今宵相会',       dur: 5000 },
+    { type: 'text', text: '戴雪静',   caption: '',            dur: 4300 },
+    { type: 'text', text: '七夕快乐', caption: '',            dur: 4300 },
+    { type: 'text', text: '我爱你',   caption: '',            dur: 4300 },
+    { type: 'heart',    caption: '愿有情人终成眷属',          dur: 4600 },
+  ];
+  var sceneIdx = 0;
+  var sceneTimer = null;
+
+  function applyScene(scene) {
+    if (scene.type === 'text') {
+      assignText(scene.text);
+    } else if (scene.type === 'heart') {
+      assignHeart();
+    } else {
+      assignMilkyway();
+    }
+
+    if (scene.type === 'stars' || scene.type === 'bridge') {
+      targetStarIntensity = 1;
+    } else if (scene.type === 'text' || scene.type === 'heart') {
+      targetStarIntensity = 0.15;
+    } else {
+      targetStarIntensity = 0.4;
+    }
+
+    targetBridgeIntensity = scene.type === 'bridge' ? 1 : (scene.type === 'stars' ? 0.45 : 0.08);
+
+    setCaption(scene.caption || '');
+  }
+
+  function transitionTo(scene) {
+    // 先散开，再汇聚 —— 让形变更自然
+    for (var i = 0; i < morphParticles.length; i++) {
+      morphParticles[i].tx = Math.random() * W;
+      morphParticles[i].ty = Math.random() * H;
+    }
+    setTimeout(function() { applyScene(scene); }, 700);
+  }
+
+  function nextScene() {
+    sceneIdx = (sceneIdx + 1) % scenes.length;
+    transitionTo(scenes[sceneIdx]);
+    scheduleNext();
+  }
+  function scheduleNext() {
+    if (sceneTimer) clearTimeout(sceneTimer);
+    sceneTimer = setTimeout(nextScene, scenes[sceneIdx].dur);
+  }
+
+  // ---------- Caption ----------
+  function setCaption(text) {
+    if (!text) {
+      captionEl.classList.remove('show');
+      return;
+    }
+    captionEl.style.opacity = '0';
+    setTimeout(function() {
+      captionEl.textContent = text;
+      captionEl.style.opacity = '';
+      captionEl.classList.add('show');
+    }, 300);
+  }
+
+  // ---------- Interaction (spawn sparkles) ----------
+  var sparks = [];
+  function spawnSpark(x, y) {
+    var n = isMobile ? 14 : 22;
+    for (var i = 0; i < n; i++) {
+      var ang = Math.random() * Math.PI * 2;
+      var spd = Math.random() * 2.5 + 0.6;
+      sparks.push({
+        x: x, y: y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        life: 1,
+        decay: Math.random() * 0.02 + 0.012,
+        size: Math.random() * 1.8 + 0.8,
+        color: pick(TEXT_COLORS),
+      });
+    }
+  }
+  function onPointer(e) {
+    var x, y;
+    if (e.touches) {
+      x = e.touches[0].clientX; y = e.touches[0].clientY;
+    } else {
+      x = e.clientX; y = e.clientY;
+    }
+    spawnSpark(x, y);
+    hintEl.style.opacity = '0';
+  }
+  canvas.addEventListener('click', onPointer);
+  canvas.addEventListener('touchstart', onPointer, { passive: true });
+
+  // ---------- Animation loop ----------
+  var lastTime = performance.now();
+  function loop(now) {
+    var time = now || performance.now();
+    var dt = Math.min(50, time - lastTime);
+    lastTime = time;
+
+    // clear
+    ctx.clearRect(0, 0, W, H);
+
+    // composite: additive glow
+    ctx.globalCompositeOperation = 'lighter';
+
+    // smooth intensities
+    starIntensity += (targetStarIntensity - starIntensity) * 0.03;
+    bridgeIntensity += (targetBridgeIntensity - bridgeIntensity) * 0.03;
+
+    // --- morph particles ---
+    for (var i = 0; i < morphParticles.length; i++) {
+      var p = morphParticles[i];
+      // ease to target
+      p.x += (p.tx - p.x) * 0.045;
+      p.y += (p.ty - p.y) * 0.045;
+      // breathing wobble
+      p.x += Math.sin(time * 0.001 + p.phase) * 0.25;
+      p.y += Math.cos(time * 0.0011 + p.phase) * 0.25;
+      // twinkle
+      var a = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * p.twinkle + p.phase));
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // --- bridge particles ---
+    if (bridgeIntensity > 0.02) {
+      for (var b = 0; b < bridgeParticles.length; b++) {
+        var bp = bridgeParticles[b];
+        bp.t += bp.speed * (dt / 16.7);
+        if (bp.t > 1) bp.t -= 1;
+        var pos = bridgePoint(bp.t);
+        bp.x = pos.x; bp.y = pos.y;
+        var mid = Math.sin(bp.t * Math.PI); // 中间亮、两端淡
+        ctx.globalAlpha = bridgeIntensity * (0.35 + 0.65 * mid);
+        ctx.fillStyle = bp.color;
+        ctx.beginPath();
+        ctx.arc(bp.x, bp.y, bp.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // --- two stars ---
+    drawStar(star1.x, star1.y, starIntensity, '#ffd7a8');
+    drawStar(star2.x, star2.y, starIntensity, '#ffd7a8');
+
+    // --- sparks ---
+    for (var s = sparks.length - 1; s >= 0; s--) {
+      var sp = sparks[s];
+      sp.x += sp.vx;
+      sp.y += sp.vy;
+      sp.vy += 0.015;
+      sp.vx *= 0.99;
+      sp.vy *= 0.99;
+      sp.life -= sp.decay;
+      if (sp.life <= 0) { sparks.splice(s, 1); continue; }
+      ctx.globalAlpha = sp.life;
+      ctx.fillStyle = sp.color;
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    requestAnimationFrame(loop);
+  }
+
+  function drawStar(x, y, intensity, color) {
+    if (intensity < 0.02) return;
+    var r = isMobile ? 3 : 4.5;
+    var g = ctx.createRadialGradient(x, y, 0, x, y, r * 7);
+    g.addColorStop(0, 'rgba(255,215,168,' + (0.9 * intensity) + ')');
+    g.addColorStop(0.3, 'rgba(255,215,168,' + (0.35 * intensity) + ')');
+    g.addColorStop(1, 'rgba(255,215,168,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r*7, y - r*7, r*14, r*14);
+
+    ctx.fillStyle = color;
+    ctx.globalAlpha = intensity;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 四芒星光
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.85 * intensity) + ')';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(x - r*3.2, y); ctx.lineTo(x + r*3.2, y);
+    ctx.moveTo(x, y - r*3.2); ctx.lineTo(x, y + r*3.2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- Init ----------
+  function init() {
+    resize();
+    for (var i = 0; i < MORPH_COUNT; i++) morphParticles.push(makeMorphParticle());
+    for (var j = 0; j < BRIDGE_COUNT; j++) bridgeParticles.push(makeBridgeParticle());
+    applyScene(scenes[0]);
+
+    // 开场标题淡入，再淡出
+    setTimeout(function() { titleEl.classList.add('show'); }, 400);
+    setTimeout(function() { titleEl.style.opacity = '0'; }, 3600);
+    setTimeout(function() { titleEl.style.display = 'none'; }, 5200);
+
+    scheduleNext();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', function() {
+    resize();
+  });
+
+  // 等字体加载后清缓存，保证中文字形采样准确
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function() { textCache = {}; });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
