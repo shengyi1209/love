@@ -556,103 +556,158 @@
 
   function drawVectorHeart(time, alpha) {
     var beat = heartbeat(time);
-    var size = Math.min(W, H) * 0.021 * (1 + beat * 0.08);
+    var size = Math.min(W, H) * 0.024 * (1 + beat * 0.09);
     var cx = W / 2, cy = H / 2;
+
+    // 外发光（additive，真正亮起来）
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.globalAlpha = alpha;
-
-    // 背景柔光
-    var gr = Math.min(W, H) * 0.52;
-    var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
-    glow.addColorStop(0, 'rgba(255,90,140,' + (0.16 + 0.14 * beat) + ')');
-    glow.addColorStop(1, 'rgba(255,90,140,0)');
+    ctx.globalCompositeOperation = 'lighter';
+    var gr = Math.min(W, H) * 0.5;
+    var glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, gr);
+    glow.addColorStop(0, 'rgba(255,80,140,' + (0.30 + 0.25 * beat) + ')');
+    glow.addColorStop(0.55, 'rgba(255,50,110,0.10)');
+    glow.addColorStop(1, 'rgba(255,50,110,0)');
     ctx.fillStyle = glow;
-    ctx.fillRect(-gr, -gr, gr * 2, gr * 2);
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(cx - gr, cy - gr, gr * 2, gr * 2);
+    ctx.restore();
 
-    // 心形主体（渐变填充）
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx, cy);
+
+    // 主体：鲜艳玫红渐变
     heartPath(ctx, size);
     var g = ctx.createLinearGradient(0, -size * 16, 0, size * 16);
-    g.addColorStop(0, '#ff9ec0');
-    g.addColorStop(0.5, '#ff5c8a');
-    g.addColorStop(1, '#d6336c');
+    g.addColorStop(0, '#ffd6e4');
+    g.addColorStop(0.3, '#ff4d88');
+    g.addColorStop(0.65, '#e6205c');
+    g.addColorStop(1, '#8f0c38');
     ctx.fillStyle = g;
     ctx.fill();
 
     // 发光描边
-    ctx.shadowColor = 'rgba(255,70,130,0.95)';
-    ctx.shadowBlur = 26;
-    ctx.strokeStyle = '#ffe0ec';
-    ctx.lineWidth = Math.max(1.5, size * 0.06);
+    ctx.shadowColor = 'rgba(255,80,150,0.95)';
+    ctx.shadowBlur = 22;
+    ctx.strokeStyle = 'rgba(255,214,228,0.95)';
+    ctx.lineWidth = Math.max(1.5, size * 0.05);
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // 左上高光
+    // 光泽高光（左上）
     ctx.save();
     heartPath(ctx, size);
     ctx.clip();
-    var hl = ctx.createRadialGradient(-size * 5, -size * 6, 0, -size * 5, -size * 6, size * 12);
-    hl.addColorStop(0, 'rgba(255,255,255,0.30)');
+    var hl = ctx.createRadialGradient(-size * 6, -size * 7, 0, -size * 6, -size * 7, size * 13);
+    hl.addColorStop(0, 'rgba(255,255,255,0.6)');
+    hl.addColorStop(0.35, 'rgba(255,255,255,0.18)');
     hl.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = hl;
     ctx.fillRect(-size * 20, -size * 20, size * 40, size * 40);
     ctx.restore();
 
+    // 底部内阴影（立体深度）
+    ctx.save();
+    heartPath(ctx, size);
+    ctx.clip();
+    var sh = ctx.createRadialGradient(size * 3, size * 10, 0, size * 3, size * 10, size * 15);
+    sh.addColorStop(0, 'rgba(110,8,40,0.55)');
+    sh.addColorStop(1, 'rgba(110,8,40,0)');
+    ctx.fillStyle = sh;
+    ctx.fillRect(-size * 20, -size * 20, size * 40, size * 40);
     ctx.restore();
 
-    // 名字（在爱心中央）
+    ctx.restore();
+
+    // 轮廓上闪烁的星点
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    for (var k = 0; k < 6; k++) {
+      var tt = (k / 6) * Math.PI * 2 + Math.PI * 0.5;
+      var sx = 16 * Math.pow(Math.sin(tt), 3);
+      var sy = 13 * Math.cos(tt) - 5 * Math.cos(2*tt) - 2 * Math.cos(3*tt) - Math.cos(4*tt);
+      var px = cx + sx * size;
+      var py = cy - sy * size * 0.92;
+      var tw = 0.5 + 0.5 * Math.sin(time * 0.006 + k * 2.4);
+      var sr = size * (0.5 + tw * 0.6);
+      var sg = ctx.createRadialGradient(px, py, 0, px, py, sr * 3);
+      sg.addColorStop(0, 'rgba(255,255,255,' + (0.9 * tw) + ')');
+      sg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sg;
+      ctx.fillRect(px - sr * 3, py - sr * 3, sr * 6, sr * 6);
+    }
+    ctx.restore();
+
+    // 名字
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     var fs = Math.min(W, H) * 0.11;
     ctx.font = '700 ' + fs + 'px "Noto Serif SC","Microsoft YaHei",serif';
-    ctx.shadowColor = 'rgba(255,220,170,0.95)';
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = '#fff7ea';
-    ctx.fillText('戴雪静', cx, cy - size * 1.5);
+    ctx.shadowColor = 'rgba(255,200,150,0.95)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = '#fff8ee';
+    ctx.fillText('戴雪静', cx, cy - size * 1.6);
     ctx.shadowBlur = 0;
     ctx.restore();
   }
 
-  function drawRosePetal(cx, cy, ang, dist, len, wid, color) {
+  function rosePetal(x, y, ang, dist, len, wid, cBase, cTip) {
     ctx.save();
-    ctx.translate(cx + Math.cos(ang) * dist, cy + Math.sin(ang) * dist);
+    ctx.translate(x + Math.cos(ang) * dist, y + Math.sin(ang) * dist);
     ctx.rotate(ang + Math.PI / 2);
+    var g = ctx.createLinearGradient(0, len * 0.2, 0, -len);
+    g.addColorStop(0, cBase);
+    g.addColorStop(1, cTip);
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(0, 0, wid, len, 0, 0, Math.PI * 2);
-    ctx.fillStyle = color;
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-wid, -len * 0.35, -wid * 0.85, -len, 0, -len);
+    ctx.bezierCurveTo(wid * 0.85, -len, wid, -len * 0.35, 0, 0);
+    ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
 
-  function rosePetalColor(frac) {
-    var light = 30 + 34 * frac;
-    return 'hsl(345, 82%, ' + light + '%)';
-  }
-
   function drawRose(x, y, r, seed) {
-    var layers = 5;
+    var layers = 7;
     for (var L = 0; L < layers; L++) {
       var frac = L / layers;
-      var rr = r * (1 - frac * 0.8);
-      var petals = Math.max(5, Math.round(9 - frac * 4));
-      var rot = frac * 1.5 + seed;
+      var rr = r * (1 - frac * 0.85);
+      var petals = Math.max(5, Math.round(8 - frac * 3));
+      var rot = frac * 2.0 + seed;
       for (var p = 0; p < petals; p++) {
         var ang = (p / petals) * Math.PI * 2 + rot;
-        drawRosePetal(x, y, ang, rr * 0.5, rr * 0.8, rr * 0.4, rosePetalColor(frac));
+        var cBase = 'hsl(345, 82%, ' + (24 + 10 * frac) + '%)';
+        var cTip  = 'hsl(345, 90%, ' + (52 + 22 * frac) + '%)';
+        rosePetal(x, y, ang, rr * 0.45, rr * 0.85, rr * 0.42, cBase, cTip);
       }
     }
+    // 花心螺旋
+    ctx.fillStyle = 'hsl(345, 92%, 18%)';
     ctx.beginPath();
-    ctx.fillStyle = 'hsl(345, 90%, 20%)';
-    ctx.arc(x, y, r * 0.14, 0, Math.PI * 2);
+    ctx.arc(x, y, r * 0.13, 0, Math.PI * 2);
     ctx.fill();
   }
 
   function drawRoseBouquet(time, alpha) {
     var cx = W / 2, cy = H * 0.52;
-    var s = Math.min(W, H) * 0.20;
+    var s = Math.min(W, H) * 0.21;
     var sway = Math.sin(time * 0.0008) * 0.035;
+
+    // 花束柔光
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    var bg = ctx.createRadialGradient(cx, cy - s * 0.4, 0, cx, cy - s * 0.4, s * 1.6);
+    bg.addColorStop(0, 'rgba(255,110,150,0.16)');
+    bg.addColorStop(1, 'rgba(255,110,150,0)');
+    ctx.fillStyle = bg;
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(cx - s * 1.6, cy - s * 2, s * 3.2, s * 3.2);
+    ctx.restore();
+
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
@@ -662,18 +717,18 @@
     var stems = isMobile ? 5 : 7;
     for (var i = 0; i < stems; i++) {
       var a = (i / stems) * Math.PI * 2 + 0.4;
-      var sx = Math.cos(a) * s * 0.6;
+      var sx = Math.cos(a) * s * 0.55;
       var sy = Math.sin(a) * s * 0.2 - s * 0.5;
-      ctx.strokeStyle = 'rgba(46,120,72,0.85)';
-      ctx.lineWidth = s * 0.05;
+      ctx.strokeStyle = 'rgba(40,120,68,0.9)';
+      ctx.lineWidth = s * 0.055;
+      ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(sx, sy);
       ctx.quadraticCurveTo(sx * 0.5, s * 1.5, 0, s * 2.4);
       ctx.stroke();
     }
 
-    // 叶子
-    ctx.fillStyle = 'rgba(60,140,90,0.9)';
+    // 叶子（带叶脉）
     for (var li = 0; li < 4; li++) {
       var la = (li / 4) * Math.PI * 2 + 1.2;
       var lx = Math.cos(la) * s * 0.5;
@@ -681,36 +736,59 @@
       ctx.save();
       ctx.translate(lx, ly);
       ctx.rotate(la);
+      var lg = ctx.createLinearGradient(0, -s*0.34, 0, s*0.34);
+      lg.addColorStop(0, 'rgba(96,180,120,0.95)');
+      lg.addColorStop(1, 'rgba(40,110,70,0.95)');
+      ctx.fillStyle = lg;
       ctx.beginPath();
       ctx.ellipse(0, 0, s * 0.16, s * 0.34, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(30,90,55,0.7)';
+      ctx.lineWidth = s * 0.02;
+      ctx.beginPath();
+      ctx.moveTo(0, -s * 0.3);
+      ctx.lineTo(0, s * 0.3);
+      ctx.stroke();
       ctx.restore();
     }
 
-    // 玫瑰（顶部聚成一束）
+    // 玫瑰
     var roses = isMobile ? 4 : 6;
     for (var j = 0; j < roses; j++) {
       var ra = (j / roses) * Math.PI * 2 + 0.5;
-      var rx = Math.cos(ra) * s * 0.68;
-      var ry = Math.sin(ra) * s * 0.32 - s * 0.1;
-      drawRose(rx, ry, s * 0.6, j * 0.7);
+      var rx = Math.cos(ra) * s * 0.66;
+      var ry = Math.sin(ra) * s * 0.3 - s * 0.08;
+      drawRose(rx, ry, s * 0.58, j * 0.7);
     }
-    drawRose(0, -s * 0.42, s * 0.82, 2.1);
+    drawRose(0, -s * 0.42, s * 0.8, 2.1);
 
-    // 包装纸（底部 V 形）
-    ctx.fillStyle = 'rgba(214,160,100,0.55)';
+    // 包装纸（底部扇形）
+    var wrap = ctx.createLinearGradient(0, s * 0.1, 0, s * 2.4);
+    wrap.addColorStop(0, 'rgba(224,170,110,0.55)');
+    wrap.addColorStop(1, 'rgba(170,120,70,0.6)');
+    ctx.fillStyle = wrap;
     ctx.beginPath();
     ctx.moveTo(0, s * 2.4);
-    ctx.lineTo(-s * 0.9, s * 0.2);
-    ctx.lineTo(s * 0.9, s * 0.2);
+    ctx.quadraticCurveTo(-s * 0.5, s * 1.1, -s * 0.95, s * 0.2);
+    ctx.lineTo(-s * 0.5, s * 0.15);
+    ctx.lineTo(s * 0.5, s * 0.15);
+    ctx.lineTo(s * 0.95, s * 0.2);
+    ctx.quadraticCurveTo(s * 0.5, s * 1.1, 0, s * 2.4);
     ctx.closePath();
     ctx.fill();
 
-    // 蝴蝶结（金色）
-    ctx.fillStyle = 'rgba(255,190,110,0.95)';
+    // 金色蝴蝶结
+    var bow = ctx.createLinearGradient(-s*0.2, 0, s*0.2, 0);
+    bow.addColorStop(0, '#ffe2a8');
+    bow.addColorStop(1, '#f0a94a');
+    ctx.fillStyle = bow;
     ctx.beginPath();
-    ctx.arc(-s * 0.18, s * 0.2, s * 0.12, 0, Math.PI * 2);
-    ctx.arc(s * 0.18, s * 0.2, s * 0.12, 0, Math.PI * 2);
+    ctx.ellipse(-s * 0.2, s * 0.18, s * 0.16, s * 0.09, -0.3, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.2, s * 0.18, s * 0.16, s * 0.09, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, s * 0.18, s * 0.05, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8953a';
     ctx.fill();
 
     ctx.restore();
