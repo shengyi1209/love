@@ -576,13 +576,13 @@
     ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
 
-    // 主体：鲜艳玫红渐变
+    // 主体：对角光源渐变（左上亮 → 右下暗，立体感）
     heartPath(ctx, size);
-    var g = ctx.createLinearGradient(0, -size * 16, 0, size * 16);
-    g.addColorStop(0, '#ffd6e4');
-    g.addColorStop(0.3, '#ff4d88');
-    g.addColorStop(0.65, '#e6205c');
-    g.addColorStop(1, '#8f0c38');
+    var g = ctx.createLinearGradient(-size * 15, -size * 15, size * 15, size * 15);
+    g.addColorStop(0, '#ffb3c9');
+    g.addColorStop(0.35, '#ff4d88');
+    g.addColorStop(0.65, '#e0155c');
+    g.addColorStop(1, '#6e0429');
     ctx.fillStyle = g;
     ctx.fill();
 
@@ -594,16 +594,21 @@
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // 光泽高光（左上）
+    // 光泽高光（左上）：锐利亮斑 + 柔和反光
     ctx.save();
     heartPath(ctx, size);
     ctx.clip();
-    var hl = ctx.createRadialGradient(-size * 6, -size * 7, 0, -size * 6, -size * 7, size * 13);
-    hl.addColorStop(0, 'rgba(255,255,255,0.6)');
-    hl.addColorStop(0.35, 'rgba(255,255,255,0.18)');
+    var hl = ctx.createRadialGradient(-size * 5, -size * 6, 0, -size * 5, -size * 6, size * 4.5);
+    hl.addColorStop(0, 'rgba(255,255,255,0.95)');
+    hl.addColorStop(0.45, 'rgba(255,255,255,0.55)');
     hl.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = hl;
     ctx.fillRect(-size * 20, -size * 20, size * 40, size * 40);
+    var hl2 = ctx.createRadialGradient(-size * 2, -size * 4, 0, -size * 2, -size * 4, size * 12);
+    hl2.addColorStop(0, 'rgba(255,255,255,0.22)');
+    hl2.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hl2;
+    ctx.fillRect(-size *20, -size * 20, size * 40, size * 40);
     ctx.restore();
 
     // 底部内阴影（立体深度）
@@ -654,144 +659,193 @@
     ctx.restore();
   }
 
-  function rosePetal(x, y, ang, dist, len, wid, cBase, cTip) {
-    ctx.save();
-    ctx.translate(x + Math.cos(ang) * dist, y + Math.sin(ang) * dist);
-    ctx.rotate(ang + Math.PI / 2);
-    var g = ctx.createLinearGradient(0, len * 0.2, 0, -len);
-    g.addColorStop(0, cBase);
-    g.addColorStop(1, cTip);
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(-wid, -len * 0.35, -wid * 0.85, -len, 0, -len);
-    ctx.bezierCurveTo(wid * 0.85, -len, wid, -len * 0.35, 0, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
+  // ---------- 玫瑰：层叠贝塞尔花瓣（精致矢量花束） ----------
+  var rosePetals = [];
 
-  function drawRose(x, y, r, seed) {
-    var layers = 7;
-    for (var L = 0; L < layers; L++) {
-      var frac = L / layers;
-      var rr = r * (1 - frac * 0.85);
-      var petals = Math.max(5, Math.round(8 - frac * 3));
-      var rot = frac * 2.0 + seed;
-      for (var p = 0; p < petals; p++) {
-        var ang = (p / petals) * Math.PI * 2 + rot;
-        var cBase = 'hsl(345, 82%, ' + (24 + 10 * frac) + '%)';
-        var cTip  = 'hsl(345, 90%, ' + (52 + 22 * frac) + '%)';
-        rosePetal(x, y, ang, rr * 0.45, rr * 0.85, rr * 0.42, cBase, cTip);
+  function buildRose() {
+    rosePetals = [];
+    // 由外到内多层花瓣；越内越短、越暗、越紧凑，形成自然螺旋花心
+    var layers = [
+      { n: 10, base: 0.16, len: 0.88, wid: 0.44, Lb: 36, Lm: 50, Lt: 68 },
+      { n:  9, base: 0.14, len: 0.76, wid: 0.42, Lb: 30, Lm: 43, Lt: 60 },
+      { n:  8, base: 0.12, len: 0.64, wid: 0.38, Lb: 24, Lm: 36, Lt: 51 },
+      { n:  7, base: 0.09, len: 0.52, wid: 0.33, Lb: 19, Lm: 29, Lt: 42 },
+      { n:  6, base: 0.04, len: 0.40, wid: 0.27, Lb: 14, Lm: 22, Lt: 33 },
+    ];
+    for (var li = 0; li < layers.length; li++) {
+      var L = layers[li];
+      for (var i = 0; i < L.n; i++) {
+        var ang = (i / L.n) * Math.PI * 2 + li * 0.5;
+        // 每片花瓣加入随机的亮度 / 色相抖动，让花瓣有自然差异
+        var jit = (Math.random() - 0.5) * 9;
+        var hue = 345 + Math.random() * 8;
+        rosePetals.push({
+          ang: ang,
+          base: L.base, len: L.len, wid: L.wid,
+          cBase: 'hsl(' + hue + ', 90%, ' + Math.max(8, L.Lb + jit) + '%)',
+          cMid:  'hsl(' + hue + ', 92%, ' + Math.max(12, L.Lm + jit) + '%)',
+          cTip:  'hsl(' + hue + ', 94%, ' + Math.min(80, L.Lt + jit) + '%)',
+        });
       }
     }
-    // 花心螺旋
-    ctx.fillStyle = 'hsl(345, 92%, 18%)';
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.13, 0, Math.PI * 2);
-    ctx.fill();
   }
 
-  function drawRoseBouquet(time, alpha) {
-    var cx = W / 2, cy = H * 0.52;
-    var s = Math.min(W, H) * 0.21;
-    var sway = Math.sin(time * 0.0008) * 0.035;
+  function rosePetalPath(pw, ph) {
+    ctx.beginPath();
+    ctx.moveTo(-pw, 0);
+    ctx.bezierCurveTo(-pw * 1.45, -ph * 0.42, -pw * 0.88, -ph * 0.92, -pw * 0.18, -ph * 0.98);
+    ctx.quadraticCurveTo(0, -ph * 0.87, pw * 0.18, -ph * 0.98);
+    ctx.bezierCurveTo(pw * 0.88, -ph * 0.92, pw * 1.45, -ph * 0.42, pw, 0);
+    ctx.closePath();
+  }
 
-    // 花束柔光
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    var bg = ctx.createRadialGradient(cx, cy - s * 0.4, 0, cx, cy - s * 0.4, s * 1.6);
-    bg.addColorStop(0, 'rgba(255,110,150,0.16)');
-    bg.addColorStop(1, 'rgba(255,110,150,0)');
-    ctx.fillStyle = bg;
-    ctx.globalAlpha = alpha;
-    ctx.fillRect(cx - s * 1.6, cy - s * 2, s * 3.2, s * 3.2);
-    ctx.restore();
-
+  function drawRoseBloom(time, alpha, cx, cy, R) {
+    var throb = 1 + Math.sin(time * 0.0011) * 0.025;
+    var rot = time * 0.00022 + heartRotation;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
-    ctx.rotate(sway + heartRotation);
-
-    // 花茎
-    var stems = isMobile ? 5 : 7;
-    for (var i = 0; i < stems; i++) {
-      var a = (i / stems) * Math.PI * 2 + 0.4;
-      var sx = Math.cos(a) * s * 0.55;
-      var sy = Math.sin(a) * s * 0.2 - s * 0.5;
-      ctx.strokeStyle = 'rgba(40,120,68,0.9)';
-      ctx.lineWidth = s * 0.055;
-      ctx.lineCap = 'round';
+    ctx.rotate(rot);
+    // 由外到内绘制（外层在底层）
+    for (var i = 0; i < rosePetals.length; i++) {
+      var p = rosePetals[i];
+      var bx = Math.cos(p.ang) * p.base * R * throb;
+      var by = Math.sin(p.ang) * p.base * R * throb;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(p.ang + Math.PI / 2);
+      var pl = p.len * R * throb;
+      var pw = p.wid * R * throb;
+      rosePetalPath(pw, pl);
+      var g = ctx.createLinearGradient(0, 0, 0, -pl);
+      g.addColorStop(0, p.cBase);
+      g.addColorStop(0.55, p.cMid);
+      g.addColorStop(1, p.cTip);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(96, 5, 30, 0.45)';
+      ctx.lineWidth = Math.max(0.8, R * 0.016);
+      ctx.stroke();
+      // 花瓣尖端柔和高光（水润感）
+      var tg = ctx.createRadialGradient(0, -pl * 0.72, 0, 0, -pl * 0.72, pl * 0.36);
+      tg.addColorStop(0, 'rgba(255, 235, 242, 0.20)');
+      tg.addColorStop(1, 'rgba(255, 235, 242, 0)');
+      ctx.fillStyle = tg;
+      ctx.fillRect(-pw, -pl, pw * 2, pl);
+      ctx.restore();
+    }
+    // 花冠底部阴影（衔接花托，增加立体深度）
+    var shd = ctx.createRadialGradient(0, R * 0.72, R * 0.15, 0, R * 0.72, R * 0.9);
+    shd.addColorStop(0, 'rgba(72, 4, 24, 0.38)');
+    shd.addColorStop(1, 'rgba(72, 4, 24, 0)');
+    ctx.fillStyle = shd;
+    ctx.fillRect(-R, -R, R * 2, R * 2);
+    // 中心螺旋花苞
+    ctx.strokeStyle = 'rgba(120, 8, 40, 0.85)';
+    ctx.lineCap = 'round';
+    for (var sp = 0; sp < 3; sp++) {
+      ctx.lineWidth = Math.max(1, R * (0.022 - sp * 0.004));
       ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.quadraticCurveTo(sx * 0.5, s * 1.5, 0, s * 2.4);
+      for (var st = 0; st <= 20; st++) {
+        var rr = R * (0.08 + st * 0.014);
+        var aa = sp * 2.1 + st * 0.32;
+        var pxx = Math.cos(aa) * rr;
+        var pyy = Math.sin(aa) * rr;
+        if (st === 0) ctx.moveTo(pxx, pyy); else ctx.lineTo(pxx, pyy);
+      }
+      ctx.stroke();
+    }
+    // 顶部柔和高光（整体光泽）
+    var hl = ctx.createRadialGradient(-R * 0.18, -R * 0.32, 0, -R * 0.18, -R * 0.32, R * 0.6);
+    hl.addColorStop(0, 'rgba(255, 228, 238, 0.30)');
+    hl.addColorStop(1, 'rgba(255, 228, 238, 0)');
+    ctx.fillStyle = hl;
+    ctx.fillRect(-R, -R, R * 2, R * 2);
+    ctx.restore();
+  }
+
+  function drawRoseScene(time, alpha) {
+    var cx = W / 2;
+    var cy = H * 0.40;
+    var R = Math.min(W * 0.46, H * 0.25);
+
+    // 柔光背景（additive）
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.9);
+    bg.addColorStop(0, 'rgba(255, 110, 150, 0.20)');
+    bg.addColorStop(1, 'rgba(255, 110, 150, 0)');
+    ctx.fillStyle = bg;
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(cx - R * 1.9, cy - R * 1.9, R * 3.8, R * 3.8);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // 花茎（一束，从花托向下收束）
+    ctx.strokeStyle = 'rgba(40, 120, 68, 0.92)';
+    ctx.lineCap = 'round';
+    var stemTop = cy + R * 0.72;
+    var stemBot = cy + R * 1.7;
+    for (var i = 0; i < 6; i++) {
+      var a = (i / 6) * Math.PI * 2 + 0.25;
+      var sx = cx + Math.cos(a) * R * 0.42;
+      ctx.lineWidth = R * 0.07;
+      ctx.beginPath();
+      ctx.moveTo(sx, stemTop);
+      ctx.quadraticCurveTo(cx + Math.cos(a) * R * 0.16, (stemTop + stemBot) / 2, cx, stemBot);
       ctx.stroke();
     }
 
-    // 叶子（带叶脉）
-    for (var li = 0; li < 4; li++) {
-      var la = (li / 4) * Math.PI * 2 + 1.2;
-      var lx = Math.cos(la) * s * 0.5;
-      var ly = Math.sin(la) * s * 0.2 + s * 0.8;
+    // 花托（萼片）：花冠下方的绿色尖叶
+    for (var se = 0; se < 5; se++) {
+      var sa = -Math.PI / 2 + (se - 2) * 0.34;
       ctx.save();
-      ctx.translate(lx, ly);
-      ctx.rotate(la);
-      var lg = ctx.createLinearGradient(0, -s*0.34, 0, s*0.34);
-      lg.addColorStop(0, 'rgba(96,180,120,0.95)');
-      lg.addColorStop(1, 'rgba(40,110,70,0.95)');
-      ctx.fillStyle = lg;
+      ctx.translate(cx + Math.cos(sa) * R * 0.10, cy + R * 0.68);
+      ctx.rotate(sa);
+      var sg = ctx.createLinearGradient(0, 0, 0, R * 0.5);
+      sg.addColorStop(0, 'rgba(96, 180, 120, 0.95)');
+      sg.addColorStop(1, 'rgba(38, 105, 66, 0.95)');
+      ctx.fillStyle = sg;
       ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.16, s * 0.34, 0, 0, Math.PI * 2);
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-R * 0.16, R * 0.24, 0, R * 0.5);
+      ctx.quadraticCurveTo(R * 0.16, R * 0.24, 0, 0);
+      ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = 'rgba(30,90,55,0.7)';
-      ctx.lineWidth = s * 0.02;
-      ctx.beginPath();
-      ctx.moveTo(0, -s * 0.3);
-      ctx.lineTo(0, s * 0.3);
-      ctx.stroke();
       ctx.restore();
     }
 
-    // 玫瑰
-    var roses = isMobile ? 4 : 6;
-    for (var j = 0; j < roses; j++) {
-      var ra = (j / roses) * Math.PI * 2 + 0.5;
-      var rx = Math.cos(ra) * s * 0.66;
-      var ry = Math.sin(ra) * s * 0.3 - s * 0.08;
-      drawRose(rx, ry, s * 0.58, j * 0.7);
-    }
-    drawRose(0, -s * 0.42, s * 0.8, 2.1);
-
-    // 包装纸（底部扇形）
-    var wrap = ctx.createLinearGradient(0, s * 0.1, 0, s * 2.4);
-    wrap.addColorStop(0, 'rgba(224,170,110,0.55)');
-    wrap.addColorStop(1, 'rgba(170,120,70,0.6)');
+    // 金色包装纸（锥形，上宽下尖）
+    var wrapTop = cy + R * 1.28;
+    var wrapBot = cy + R * 2.15;
+    var wrap = ctx.createLinearGradient(cx - R, 0, cx + R, 0);
+    wrap.addColorStop(0, 'rgba(226, 172, 112, 0.66)');
+    wrap.addColorStop(1, 'rgba(170, 120, 70, 0.66)');
     ctx.fillStyle = wrap;
     ctx.beginPath();
-    ctx.moveTo(0, s * 2.4);
-    ctx.quadraticCurveTo(-s * 0.5, s * 1.1, -s * 0.95, s * 0.2);
-    ctx.lineTo(-s * 0.5, s * 0.15);
-    ctx.lineTo(s * 0.5, s * 0.15);
-    ctx.lineTo(s * 0.95, s * 0.2);
-    ctx.quadraticCurveTo(s * 0.5, s * 1.1, 0, s * 2.4);
+    ctx.moveTo(cx, wrapBot);
+    ctx.quadraticCurveTo(cx - R * 0.68, wrapTop + R * 0.1, cx - R * 0.95, wrapTop);
+    ctx.lineTo(cx - R * 0.40, wrapTop + R * 0.05);
+    ctx.lineTo(cx + R * 0.40, wrapTop + R * 0.05);
+    ctx.lineTo(cx + R * 0.95, wrapTop);
+    ctx.quadraticCurveTo(cx + R * 0.68, wrapTop + R * 0.1, cx, wrapBot);
     ctx.closePath();
     ctx.fill();
 
-    // 金色蝴蝶结
-    var bow = ctx.createLinearGradient(-s*0.2, 0, s*0.2, 0);
-    bow.addColorStop(0, '#ffe2a8');
-    bow.addColorStop(1, '#f0a94a');
-    ctx.fillStyle = bow;
+    // 蝴蝶结
+    var bowY = cy + R * 1.5;
+    ctx.fillStyle = 'rgba(255, 190, 110, 0.95)';
     ctx.beginPath();
-    ctx.ellipse(-s * 0.2, s * 0.18, s * 0.16, s * 0.09, -0.3, 0, Math.PI * 2);
-    ctx.ellipse(s * 0.2, s * 0.18, s * 0.16, s * 0.09, 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(0, s * 0.18, s * 0.05, 0, Math.PI * 2);
-    ctx.fillStyle = '#e8953a';
+    ctx.arc(cx - R * 0.16, bowY, R * 0.12, 0, Math.PI * 2);
+    ctx.arc(cx + R * 0.16, bowY, R * 0.12, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
+
+    // 花冠（最上层）
+    drawRoseBloom(time, alpha, cx, cy, R);
   }
 
   // ---------- Animation loop ----------
@@ -983,12 +1037,12 @@
     }
     ctx.globalAlpha = 1;
 
-    // --- scene vector overlay (heart / rose) ---
+    // --- scene overlay (heart / rose) ---
     if (isHeartScene || isRoseScene) targetSceneAlpha = 1; else targetSceneAlpha = 0;
-    sceneAlpha += (targetSceneAlpha - sceneAlpha) * 0.05;
+    sceneAlpha += (targetSceneAlpha - sceneAlpha) * 0.09;
     if (sceneAlpha > 0.01) {
       if (isHeartScene) drawVectorHeart(time, sceneAlpha);
-      else if (isRoseScene) drawRoseBouquet(time, sceneAlpha);
+      else if (isRoseScene) drawRoseScene(time, sceneAlpha);
     }
 
     requestAnimationFrame(loop);
@@ -1027,6 +1081,7 @@
     ctx.fillRect(0, 0, W, H);
     for (var i = 0; i < MORPH_COUNT; i++) morphParticles.push(makeMorphParticle());
     for (var j = 0; j < BRIDGE_COUNT; j++) bridgeParticles.push(makeBridgeParticle());
+    buildRose();
     applyScene(scenes[0]);
 
     // 标题常驻
